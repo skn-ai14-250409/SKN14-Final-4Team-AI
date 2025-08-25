@@ -1,0 +1,30 @@
+{
+  "model": "vits",
+  "run_name": "ko_single_speaker_vits",
+  "output_path": "./runs",
+  "batch_size": 2,
+  "eval_batch_size": 2,
+  "num_loader_workers": 0,
+  "num_eval_loader_workers": 0,
+  "epochs": 50,
+  "use_speaker_embedding": false,
+  "audio": {
+    "sample_rate": 24000,
+    "channels": 1,
+    "fft_size": 1024,
+    "hop_length": 256,
+    "win_length": 1024,
+    "mel_fmin": 0.0,
+    "mel_fmax": null,
+    "signal_norm": true,
+    "max_wav_value": 32768.0
+  },
+  "datasets": [
+    {
+      "formatter": "ljspeech",
+      "path": "/Users/yun-iseo/Desktop/SKN_AI/final_prj/tts/my-tts-ds",
+      "meta_file_train": "metadata_ljs.csv",
+      "meta_file_val": "metadata_ljs.csv"
+    }
+  ]
+}
