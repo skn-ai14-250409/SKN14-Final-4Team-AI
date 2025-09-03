@@ -1,0 +1,207 @@
+[
+  {
+    "file": "input1.txt",
+    "profile": {
+      "counts": {
+        "sentences": 1,
+        "tokens": 0,
+        "types": 0
+      },
+      "lexical": {
+        "ttr": 0.0,
+        "latin_char_ratio": 0.0,
+        "digit_char_ratio": 0.0
+      },
+      "sentence_length": {
+        "avg_tokens_per_sentence": 0.0,
+        "std_tokens_per_sentence": 0.0
+      },
+      "sentence_modes_pct": {
+        "declarative_pct": 100.0,
+        "interrogative_pct": 0.0,
+        "exclamatory_pct": 0.0,
+        "ellipses_pct": 0.0
+      },
+      "endings_top": [],
+      "discourse_markers_per_1000t": {},
+      "fillers_per_1000t": {},
+      "hedges_per_1000t": {},
+      "imperatives_estimated": 0,
+      "formality_score": 0.0,
+      "pace_wpm_estimate": null
+    },
+    "guide": [
+      "- 말끝(종결어미): 상위 분포 []. 해당 종결을 우선 사용.",
+      "- 문장 길이: 어절 기준 평균 0.0±0.0. 이 범위를 유지.",
+      "- 화법/형식: 중립체 혼합 (formality_score=0.0).",
+      "- 문장 유형 비율: 평서/의문/감탄 ≈ 100.0% / 0.0% / 0.0%."
+    ]
+  },
+  {
+    "file": "input2.txt",
+    "profile": {
+      "counts": {
+        "sentences": 1,
+        "tokens": 0,
+        "types": 0
+      },
+      "lexical": {
+        "ttr": 0.0,
+        "latin_char_ratio": 0.0003,
+        "digit_char_ratio": 0.0
+      },
+      "sentence_length": {
+        "avg_tokens_per_sentence": 0.0,
+        "std_tokens_per_sentence": 0.0
+      },
+      "sentence_modes_pct": {
+        "declarative_pct": 100.0,
+        "interrogative_pct": 0.0,
+        "exclamatory_pct": 0.0,
+        "ellipses_pct": 0.0
+      },
+      "endings_top": [
+        [
+          "야",
+          1
+        ]
+      ],
+      "discourse_markers_per_1000t": {},
+      "fillers_per_1000t": {},
+      "hedges_per_1000t": {},
+      "imperatives_estimated": 0,
+      "formality_score": -1.0,
+      "pace_wpm_estimate": null
+    },
+    "guide": [
+      "- 말끝(종결어미): 상위 분포 ['야']. 해당 종결을 우선 사용.",
+      "- 문장 길이: 어절 기준 평균 0.0±0.0. 이 범위를 유지.",
+      "- 화법/형식: 반말/비격식 혼용 (formality_score=-1.0).",
+      "- 문장 유형 비율: 평서/의문/감탄 ≈ 100.0% / 0.0% / 0.0%."
+    ]
+  },
+  {
+    "file": "input3.txt",
+    "profile": {
+      "counts": {
+        "sentences": 1,
+        "tokens": 0,
+        "types": 0
+      },
+      "lexical": {
+        "ttr": 0.0,
+        "latin_char_ratio": 0.0,
+        "digit_char_ratio": 0.0
+      },
+      "sentence_length": {
+        "avg_tokens_per_sentence": 0.0,
+        "std_tokens_per_sentence": 0.0
+      },
+      "sentence_modes_pct": {
+        "declarative_pct": 100.0,
+        "interrogative_pct": 0.0,
+        "exclamatory_pct": 0.0,
+        "ellipses_pct": 0.0
+      },
+      "endings_top": [],
+      "discourse_markers_per_1000t": {},
+      "fillers_per_1000t": {},
+      "hedges_per_1000t": {},
+      "imperatives_estimated": 0,
+      "formality_score": 0.0,
+      "pace_wpm_estimate": null
+    },
+    "guide": [
+      "- 말끝(종결어미): 상위 분포 []. 해당 종결을 우선 사용.",
+      "- 문장 길이: 어절 기준 평균 0.0±0.0. 이 범위를 유지.",
+      "- 화법/형식: 중립체 혼합 (formality_score=0.0).",
+      "- 문장 유형 비율: 평서/의문/감탄 ≈ 100.0% / 0.0% / 0.0%."
+    ]
+  },
+  {
+    "file": "input4.txt",
+    "profile": {
+      "counts": {
+        "sentences": 1,
+        "tokens": 0,
+        "types": 0
+      },
+      "lexical": {
+        "ttr": 0.0,
+        "latin_char_ratio": 0.0,
+        "digit_char_ratio": 0.0
+      },
+      "sentence_length": {
+        "avg_tokens_per_sentence": 0.0,
+        "std_tokens_per_sentence": 0.0
+      },
+      "sentence_modes_pct": {
+        "declarative_pct": 100.0,
+        "interrogative_pct": 0.0,
+        "exclamatory_pct": 0.0,
+        "ellipses_pct": 0.0
+      },
+      "endings_top": [
+        [
+          "니다",
+          1
+        ]
+      ],
+      "discourse_markers_per_1000t": {},
+      "fillers_per_1000t": {},
+      "hedges_per_1000t": {},
+      "imperatives_estimated": 0,
+      "formality_score": 1.0,
+      "pace_wpm_estimate": null
+    },
+    "guide": [
+      "- 말끝(종결어미): 상위 분포 ['니다']. 해당 종결을 우선 사용.",
+      "- 문장 길이: 어절 기준 평균 0.0±0.0. 이 범위를 유지.",
+      "- 화법/형식: 격식체 중심 (formality_score=1.0).",
+      "- 문장 유형 비율: 평서/의문/감탄 ≈ 100.0% / 0.0% / 0.0%."
+    ]
+  },
+  {
+    "file": "input5.txt",
+    "profile": {
+      "counts": {
+        "sentences": 1,
+        "tokens": 0,
+        "types": 0
+      },
+      "lexical": {
+        "ttr": 0.0,
+        "latin_char_ratio": 0.0,
+        "digit_char_ratio": 0.0
+      },
+      "sentence_length": {
+        "avg_tokens_per_sentence": 0.0,
+        "std_tokens_per_sentence": 0.0
+      },
+      "sentence_modes_pct": {
+        "declarative_pct": 100.0,
+        "interrogative_pct": 0.0,
+        "exclamatory_pct": 0.0,
+        "ellipses_pct": 0.0
+      },
+      "endings_top": [
+        [
+          "세요",
+          1
+        ]
+      ],
+      "discourse_markers_per_1000t": {},
+      "fillers_per_1000t": {},
+      "hedges_per_1000t": {},
+      "imperatives_estimated": 0,
+      "formality_score": 1.0,
+      "pace_wpm_estimate": null
+    },
+    "guide": [
+      "- 말끝(종결어미): 상위 분포 ['세요']. 해당 종결을 우선 사용.",
+      "- 문장 길이: 어절 기준 평균 0.0±0.0. 이 범위를 유지.",
+      "- 화법/형식: 격식체 중심 (formality_score=1.0).",
+      "- 문장 유형 비율: 평서/의문/감탄 ≈ 100.0% / 0.0% / 0.0%."
+    ]
+  }
+]

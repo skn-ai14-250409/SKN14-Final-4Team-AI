@@ -1,0 +1,49 @@
+{
+  "profile": {
+    "counts": {
+      "files": 5,
+      "tokens_total": 0
+    },
+    "lexical": {
+      "ttr": 0.0,
+      "latin_char_ratio": 0.0,
+      "digit_char_ratio": 0.0
+    },
+    "sentence_length": {
+      "avg_tokens_per_sentence": 0.0,
+      "std_tokens_per_sentence": 0.0
+    },
+    "sentence_modes_pct": {
+      "declarative_pct": 0.0,
+      "interrogative_pct": 0.0,
+      "exclamatory_pct": 0.0,
+      "ellipses_pct": 0.0
+    },
+    "endings_top": [
+      [
+        "야",
+        1
+      ],
+      [
+        "니다",
+        1
+      ],
+      [
+        "세요",
+        1
+      ]
+    ],
+    "discourse_markers_per_1000t": {},
+    "fillers_per_1000t": {},
+    "hedges_per_1000t": {},
+    "imperatives_estimated": 0,
+    "formality_score": 0.0,
+    "pace_wpm_estimate": null
+  },
+  "style_guide_bullets": [
+    "- 말끝(종결어미): 상위 분포 ['야', '니다', '세요']. 해당 종결을 우선 사용.",
+    "- 문장 길이: 어절 기준 평균 0.0±0.0. 이 범위를 유지.",
+    "- 화법/형식: 중립체 혼합 (formality_score=0.0).",
+    "- 문장 유형 비율: 평서/의문/감탄 ≈ 0.0% / 0.0% / 0.0%."
+  ]
+}
