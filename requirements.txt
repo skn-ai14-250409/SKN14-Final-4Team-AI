@@ -92,7 +92,7 @@ notebook_shim==0.2.4
 numpy==2.3.2
 onnxruntime==1.22.1
 overrides==7.7.0
-packaging==25.0
+packaging>=24.2,<25
 pandas==2.3.1
 pandocfilters==1.5.1
 paramiko==4.0.0
@@ -161,3 +161,8 @@ wheel==0.45.1
 widgetsnbextension==4.0.14
 yt-dlp==2025.8.20
 zipp==3.23.0
+
+openai>=1.45.0
+pinecone-client>=5.0.1
+python-dotenv>=1.0.1
+SQLAlchemy>=2.0.32
