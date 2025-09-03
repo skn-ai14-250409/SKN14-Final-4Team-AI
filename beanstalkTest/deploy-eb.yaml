@@ -1,0 +1,64 @@
+# 필요한 것
+# AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+# ECR_REPO (ECR 리포지토리 URI)
+# EB_APP_NAME, EB_ENV_NAME
+
+name: Deploy to EB via ECR
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push
+        run: |
+          REPO="${{ secrets.ECR_REPO }}"   # 예: 1234.dkr.ecr.ap-northeast-2.amazonaws.com/fastapi-app
+          TAG=${GITHUB_SHA::7}
+          docker build -t $REPO:$TAG .
+          docker push $REPO:$TAG
+          echo "IMAGE=$REPO:$TAG" >> $GITHUB_ENV
+
+      - name: Make Dockerrun
+        run: |
+          cat > Dockerrun.aws.json <<EOF
+          {
+            "AWSEBDockerrunVersion": 2,
+            "containerDefinitions": [
+              {
+                "name": "fastapi",
+                "image": "${IMAGE}",
+                "essential": true,
+                "memory": 512,
+                "portMappings": [{ "containerPort": 8000, "hostPort": 8000 }]
+              }
+            ]
+          }
+          EOF
+          zip app-${GITHUB_SHA::7}.zip Dockerrun.aws.json
+
+      - name: Upload & Create EB App Version
+        run: |
+          BUCKET=$(aws elasticbeanstalk create-storage-location --query S3Bucket --output text)
+          aws s3 cp app-${GITHUB_SHA::7}.zip s3://$BUCKET/
+          aws elasticbeanstalk create-application-version \
+            --application-name "${{ secrets.EB_APP_NAME }}" \
+            --version-label "build-${GITHUB_SHA::7}" \
+            --source-bundle S3Bucket="$BUCKET",S3Key="app-${GITHUB_SHA::7}.zip"
+
+      - name: Update EB Environment
+        run: |
+          aws elasticbeanstalk update-environment \
+            --environment-name "${{ secrets.EB_ENV_NAME }}" \
+            --version-label "build-${GITHUB_SHA::7}"
