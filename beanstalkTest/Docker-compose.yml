@@ -1,0 +1,27 @@
+# mysql이 아직 준비되지 않았을 때 진행한 임시 docker-compose.yml입니다!!!!!!!!!!!!!
+# mysql 있으면 실행시키지마!!!!!!!!!!!!!!1
+
+version: "3.9"
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: local-mysql
+    environment:
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppass
+      MYSQL_ROOT_PASSWORD: rootpass
+    command: ["mysqld","--character-set-server=utf8mb4","--collation-server=utf8mb4_unicode_ci"]
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - "8081:8080"
+
+volumes:
+  mysql_data:
