@@ -14,7 +14,7 @@ load_dotenv()
 client = OpenAI()
 DEFAULT_CHAT_MODEL = os.getenv("CHAT_MODEL", "gpt-4.1-nano")
 EMBED_MODEL = os.getenv("EMBED_MODEL")
-DEFAULT_DB_URL = os.getenv("APP_DB_URL", "sqlite:///C:/Workspaces/crawling_test/brand_crawler/db.sqlite3")
+DEFAULT_DB_URL = os.getenv("APP_DB_URL")
 
 # --- 스타일 매칭표 ---
 STYLE_MATCHING_TABLE = """
@@ -52,16 +52,20 @@ RESPONSE_FORMAT_CODY_PLAN = {
     }}
 }
 
-# 상의/하의 객체 스키마 정의
+# 상의/하의 객체 스키마 정의 (search_history_product_id 추가)
 product_schema = {
     "type": ["object", "null"],
     "properties": {
-        "name": {"type": "string"}, "price": {"type": ["number", "null"]},
-        "image_url": {"type": "string"}, "color": {"type": "string"},
-        "spec": {"type": "string"}, "sustainable_detail": {"type": "string"},
-        "url": {"type": "string"}
+        "name": {"type": "string"}, 
+        "price": {"type": ["number", "null"]},
+        "image_url": {"type": "string"}, 
+        "color": {"type": "string"},
+        "spec": {"type": "string"}, 
+        "sustainable_detail": {"type": "string"},
+        "url": {"type": "string"},
+        "search_history_product_id": {"type": ["number", "null"]}
     },
-    "required": ["name", "price", "image_url", "color", "spec", "sustainable_detail", "url"]
+    "required": ["name", "price", "image_url", "color", "spec", "sustainable_detail", "url", "search_history_product_id"]
 }
 
 FINAL_RESPONSE_FORMAT_CODY = {
@@ -100,13 +104,54 @@ DEV_RULES_CODY = (
     "아래 스타일 매칭표를 참고해서, 벡터DB에서 찾아온 각 스타일에 가장 적합한 '상의'와 '하의' 검색 키워드를 조합하여 SQL 쿼리 쌍을 생성해라.\n"
     f"{STYLE_MATCHING_TABLE}\n\n"
     "- 테이블: app_product\n"
-    "- SELECT 컬럼: name, price, image_url, color, url, category, details_intro, material, fit, sustainable_detail\n"
+    "- SELECT 컬럼: id, name, price, image_url, color, url, category, details_intro, material, fit, sustainable_detail\n"
     "- 규칙:\n"
     "  * 모든 쿼리는 `SELECT [컬럼들] FROM app_product WHERE [조건들] LIMIT 10` 구조를 따라야 한다.\n"
     "  * 쿼리 조건은 'OR'를 사용해 더 유연하게 만들어라. 예를 들어, 'work' 스타일의 상의를 찾는다면 `LOWER(category) LIKE '%top%' OR LOWER(details_intro) LIKE '%work%'` 와 같이 작성한다.\n"
     "  * 상의 쿼리는 `LOWER(category) LIKE '%top%'` 등 상의 관련 조건을, 하의 쿼리는 `LOWER(category) LIKE '%pants%'` 등 하의 관련 조건을 반드시 포함해야 한다.\n"
     "- 출력 스키마: `{\"results\": [{\"cody_style\": \"스타일명\", \"top_query\": \"상의용 SQL\", \"bottom_query\": \"하의용 SQL\"}]}`"
 )
+
+# --- 데이터베이스 관련 함수 ---
+
+def save_search_history(user_query: str, db_url: str = DEFAULT_DB_URL) -> int:
+    """search_history 테이블에 검색 이력 저장하고 ID 반환"""
+    engine = sa.create_engine(_ensure_sqlite_url(db_url))
+    with engine.connect() as conn:
+        result = conn.execute(sa.text("""
+            INSERT INTO search_history (user_id, searched_at) 
+            VALUES (1, CURRENT_TIMESTAMP)
+        """))
+        conn.commit()
+        # 마지막 삽입된 ID 가져오기
+        search_id = conn.execute(sa.text("SELECT last_insert_rowid()")).scalar()
+        print(f"✅ search_history에 저장됨 (ID: {search_id})")
+        return search_id
+
+def save_search_history_product(search_id: int, product_id: int, db_url: str = DEFAULT_DB_URL) -> int:
+    """search_history_product 테이블에 상품 저장하고 ID 반환"""
+    engine = sa.create_engine(_ensure_sqlite_url(db_url))
+    with engine.connect() as conn:
+        result = conn.execute(sa.text("""
+            INSERT INTO search_history_product (search_id, product_id) 
+            VALUES (:search_id, :product_id)
+        """), {"search_id": search_id, "product_id": product_id})
+        conn.commit()
+        # 마지막 삽입된 ID 가져오기
+        history_product_id = conn.execute(sa.text("SELECT last_insert_rowid()")).scalar()
+        return history_product_id
+
+def update_search_history_look_style(search_id: int, look_style: str, db_url: str = DEFAULT_DB_URL):
+    """search_history 테이블의 look_style 컬럼 업데이트"""
+    engine = sa.create_engine(_ensure_sqlite_url(db_url))
+    with engine.connect() as conn:
+        conn.execute(sa.text("""
+            UPDATE search_history 
+            SET look_style = :look_style 
+            WHERE id = :search_id
+        """), {"look_style": look_style, "search_id": search_id})
+        conn.commit()
+        print(f"✅ search_history (ID: {search_id})의 look_style을 '{look_style}'로 업데이트")
 
 # --- 핵심 기능 함수 ---
 
@@ -148,7 +193,7 @@ def prompting_to_cody_query_plan(looks: List[Dict[str, Any]], model: str = DEFAU
     data = json.loads(resp.choices[0].message.content)
     return data.get("results", [])
 
-def _llm_pick_best_cody_from_candidates(plan: List[Dict[str, Any]], candidate_rows: Dict[str, Dict[str, List[Dict]]], model: str = DEFAULT_CHAT_MODEL) -> List[Dict[str, Any]]:
+def _llm_pick_best_cody_from_candidates(plan: List[Dict[str, Any]], candidate_rows: Dict[str, Dict[str, List[Dict]]], search_id: int, model: str = DEFAULT_CHAT_MODEL, db_url: str = DEFAULT_DB_URL) -> List[Dict[str, Any]]:
     system = "당신은 상의와 하의 후보 목록을 보고 가장 잘 어울리는 코디 조합을 만드는 최고의 패션 코디네이터입니다. '스타일 매칭표'를 참고하여 선택 이유를 명확하게 설명해야 합니다."
     dev = (
         "규칙:\n"
@@ -157,7 +202,8 @@ def _llm_pick_best_cody_from_candidates(plan: List[Dict[str, Any]], candidate_ro
         "3. 후보가 없으면 해당 필드(top 또는 bottom)를 null로 두고 `reason_selected`에 '적합한 상품을 찾지 못했습니다.'라고 설명하세요.\n"
         "4. `reason_selected`는 '스타일 매칭표'의 어떤 스타일에 기반했고, 왜 이 조합이 잘 어울리는지 구체적으로 설명해야 합니다.\n"
         "5. `look_style`은 plan의 `cody_style`을 그대로 사용하세요.\n"
-        "6. 각 상품 객체 안의 `spec` 필드에는 `details_intro`, `material`, `fit` 정보를 요약해서 간결한 문장으로 채워주세요."
+        "6. 각 상품 객체 안의 `spec` 필드에는 `details_intro`, `material`, `fit` 정보를 요약해서 간결한 문장으로 채워주세요.\n"
+        "7. `search_history_product_id` 필드는 null로 설정하세요 (이후 별도로 처리됩니다)."
     )
     user = (
         f"스타일 매칭표:\n{STYLE_MATCHING_TABLE}\n\n"
@@ -172,12 +218,48 @@ def _llm_pick_best_cody_from_candidates(plan: List[Dict[str, Any]], candidate_ro
     )
     data = json.loads(resp.choices[0].message.content)
     results = data.get("results", [])
+    
+    # cody_style을 look_style로 변환
     for res in results:
         if "cody_style" in res:
             res["look_style"] = res.pop("cody_style")
+    
+    # search_history_product에 저장하고 ID 추가
+    for result in results:
+        # look_style을 search_history에 업데이트
+        if result.get("look_style"):
+            update_search_history_look_style(search_id, result["look_style"], db_url)
+        
+        # 상의 상품 처리
+        if result.get("top") and result["top"].get("name"):
+            # 상품 ID 찾기 (name으로 검색)
+            engine = sa.create_engine(_ensure_sqlite_url(db_url))
+            with engine.connect() as conn:
+                product_result = conn.execute(sa.text("""
+                    SELECT id FROM app_product WHERE name = :name LIMIT 1
+                """), {"name": result["top"]["name"]}).fetchone()
+                
+                if product_result:
+                    product_id = product_result[0]
+                    history_product_id = save_search_history_product(search_id, product_id, db_url)
+                    result["top"]["search_history_product_id"] = history_product_id
+        
+        # 하의 상품 처리
+        if result.get("bottom") and result["bottom"].get("name"):
+            engine = sa.create_engine(_ensure_sqlite_url(db_url))
+            with engine.connect() as conn:
+                product_result = conn.execute(sa.text("""
+                    SELECT id FROM app_product WHERE name = :name LIMIT 1
+                """), {"name": result["bottom"]["name"]}).fetchone()
+                
+                if product_result:
+                    product_id = product_result[0]
+                    history_product_id = save_search_history_product(search_id, product_id, db_url)
+                    result["bottom"]["search_history_product_id"] = history_product_id
+    
     return results
 
-def json_search_with_cody_plan(plan: List[Dict[str, Any]], db_url: str = DEFAULT_DB_URL, model: str = DEFAULT_CHAT_MODEL) -> Optional[List[Dict[str, Any]]]:
+def json_search_with_cody_plan(plan: List[Dict[str, Any]], search_id: int, db_url: str = DEFAULT_DB_URL, model: str = DEFAULT_CHAT_MODEL) -> Optional[List[Dict[str, Any]]]:
     engine = sa.create_engine(_ensure_sqlite_url(db_url))
     candidate_rows = {}
 
@@ -194,12 +276,15 @@ def json_search_with_cody_plan(plan: List[Dict[str, Any]], db_url: str = DEFAULT
         except Exception as e:
             print(f"'{cody_style}' 쿼리 실행 중 오류 발생: {e}")
 
-    final_cody_json = _llm_pick_best_cody_from_candidates(plan, candidate_rows, model=model)
+    final_cody_json = _llm_pick_best_cody_from_candidates(plan, candidate_rows, search_id, model=model, db_url=db_url)
     return final_cody_json
 
 # --- 메인 실행 블록 ---
 if __name__ == "__main__":
-    q = " ".join(sys.argv[1:]).strip() or "퇴근 후 약속에 어울리는 출근룩"
+    q = " ".join(sys.argv[1:]).strip()
+    
+    print("\n=== 0단계: 검색 이력 저장 ===")
+    search_id = save_search_history(q)
     
     print("\n=== 1단계: 벡터DB 조회 ===")
     looks = vedb_list(q, top_k=2)
@@ -218,7 +303,7 @@ if __name__ == "__main__":
     print(json.dumps(cody_plan, ensure_ascii=False, indent=2))
     
     print("\n=== 3단계: DB 조회 및 최종 코디 선택 ===")
-    final_codies = json_search_with_cody_plan(cody_plan)
+    final_codies = json_search_with_cody_plan(cody_plan, search_id)
     
     print("\n=== FINAL CODY RECOMMENDATIONS ===")
     print(json.dumps(final_codies or [], ensure_ascii=False, indent=2))
