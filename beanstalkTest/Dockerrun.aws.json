@@ -2,13 +2,11 @@
   "AWSEBDockerrunVersion": 2,
   "containerDefinitions": [
     {
-      "name": "fastapi",
-      "image": "967883357924.dkr.ecr.ap-northeast-2.amazonaws.com/fastapi-app:latest",
+      "name": "looplabel-api",
+      "image": "967883357924.dkr.ecr.ap-northeast-2.amazonaws.com/looplabel-api:latest",
       "essential": true,
       "memory": 512,
-      "portMappings": [
-        { "containerPort": 8000, "hostPort": 80 }
-      ]
+      "portMappings": [{ "containerPort": 8100 }]
     }
   ]
 }

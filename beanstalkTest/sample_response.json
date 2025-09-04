@@ -1,0 +1,30 @@
+{
+  "query": "로컬 파이프라인 테스트",
+  "top_k": 2,
+  "results": [
+    {
+      "look_style": "모던 미니멀룩",
+      "top": {
+        "name": "GREEN POL PIQUE SHIRT",
+        "price": 88995.0,
+        "image_url": "http://ecoalf.com/cdn/shop/files/MCMGASRPOL000838S25-143_1744.jpg?v=1738238773",
+        "color": "green",
+        "spec": "The Pol Pique T-shirt is made of 100% recycled cotton. Using recycled cotton leads to significant savings in water consumption, not to menti (material: The Pol Pique T-shirt is made of 100% recycled cotton. Using recycled cotton leads to significant savings in water consumption, not to mention giving textile waste a new lease of life. In doing so, we avoid using virgin cotton, reducing the pressure on natural materials. It strikes the perfect balance between an elegant design with a modern touch, making you look sophisticated on any occasion., fit: Regular)",
+        "sustainable_detail": "364,01 liters of water used / 87% % of liters saved | 5,37 kg CO2 eq used / 54% % of kg CO2 eq saved | 12379,4 km behind committed to sustainability | B Corp certification guarantees\nand product supply chain traceability | Global Recycled Standard",
+        "url": "https://ecoalf.com/en-int/products/polalf-pique-shirt-man-washed-green-ss25",
+        "search_history_product_id": null
+      },
+      "bottom": {
+        "name": "WATER GREEN LANAI SWIM TRUNKS",
+        "price": 92265.0,
+        "image_url": "http://ecoalf.com/cdn/shop/files/MCMGASSLANAI0293S25-609_5054_69de59ba-f626-4114-870b-f59ad54a141e.jpg?v=1738587310",
+        "color": "green",
+        "spec": "The Lanai swim trunks are made of 100% recycled polyamide. This way, we achieve significant CO2 and water savings, and give a new lease of l (material: 100% Recycled Polyamide, fit: Regular)",
+        "sustainable_detail": "180,4 liters of water used / 37% % of liters saved | 5 kg CO2 eq used / 29% % of kg CO2 eq saved | 23643,58 km behind committed to sustainability | B Corp certification guarantees\nand product supply chain traceability | Global Recycled Standard",
+        "url": "https://ecoalf.com/en-int/products/new-lanaialf-swimsuit-man-aqua-green-ss25",
+        "search_history_product_id": null
+      },
+      "reason_selected": "상·하의가 심플한 색감과 베이직 핏으로 조합되어 일상/가벼운 외출에 무난하며, 소재와 핏이 깔끔해 사진발이 잘 받습니다."
+    }
+  ]
+}
