@@ -9,15 +9,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential curl ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# 파이썬 의존성 설치
+# 파이썬 의존성 설치(beanstalkTest의 req.. 사용 시 상대경로로 표시)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 앱 코드 복사
-COPY app ./app
+# 앱 코드 복사 v (경로상의 문제 없음)
+COPY app .
 
-# 컨테이너가 노출할 포트
-EXPOSE 8000
+# 컨테이너가 노출할 포트 (EB는 80 포트를 default로 바라봄)
+EXPOSE 8100
 
 # FastAPI 실행 (uvicorn)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8100"]
