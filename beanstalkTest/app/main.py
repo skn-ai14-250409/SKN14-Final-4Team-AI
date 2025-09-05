@@ -2,9 +2,9 @@ from fastapi import FastAPI, Depends, HTTPException
 import os
 from pydantic import BaseModel
 from sqlalchemy import text
-from .deps import get_db
-from .database import SessionLocal
-from .pipeline_runner import vedb_list, prompting_to_cody_query_plan, json_search_with_cody_plan
+# from deps import get_db
+from database import SessionLocal
+from pipeline_runner import vedb_list, prompting_to_cody_query_plan, json_search_with_cody_plan
 
 # 라우터
 from .controller import items, users, admins, prompt
