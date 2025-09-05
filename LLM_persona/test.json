@@ -1,0 +1,47 @@
+[
+  {
+    "look_name": "Elegant Wedding Guest Look",
+    "query": "SELECT name, image_url, price, color, details_intro, details_bullets, material, composition_parts, made_in, sustainable_detail, url FROM app_product WHERE LOWER(details_intro) LIKE LOWER('%wedding%') OR LOWER(details_bullets) LIKE LOWER('%wedding%') OR LOWER(category) LIKE LOWER('%dress%') OR LOWER(category) LIKE LOWER('%suit%') ORDER BY (price IS NULL), price LIMIT 50",
+    "product_name": "BEIGE CERCIS DRESS",
+    "color": "white",
+    "spec": "60% organic cotton, 40% TENCEL™ LYOCELL",
+    "sustainable_detail": "51,18 liters of water used / 95% % of liters saved | 4,16 kg CO2 eq used / 48% % of kg CO2 eq saved | 32 people behind with safe work & better livelihoods | + 21 processes from design to sale in a product ethically traded | 13.560 km behind committed to sustainability | B Corp B Corp certification guarantees and product supply chain traceability",
+    "reason_selected": "Water and emission savings, certified supply chain"
+  },
+  {
+    "look_name": "Chic Afternoon Tea Outfit",
+    "query": "SELECT name, image_url, price, color, details_intro, details_bullets, material, composition_parts, made_in, sustainable_detail, url FROM app_product WHERE LOWER(details_intro) LIKE LOWER('%tea%') OR LOWER(details_bullets) LIKE LOWER('%tea%') OR LOWER(category) LIKE LOWER('%dress%') OR LOWER(category) LIKE LOWER('%skirt%') OR LOWER(category) LIKE LOWER('%blouse%') ORDER BY (price IS NULL), price LIMIT 50",
+    "product_name": "WHITE KAORI DRESS",
+    "color": "white",
+    "spec": "70% Organic Cotton, 30% Recycled Cotton",
+    "sustainable_detail": "905,1 liters of water used / 66% % of liters saved | 7,95 kg CO2 eq used / 30% % of kg CO2 eq saved | 22925,1 km behind committed to sustainability | B Corp B Corp certification guarantees and product supply chain traceability",     
+    "reason_selected": "Organic and recycled materials, certification"
+  },
+  {
+    "look_name": "Formal Attire for Attending Events",
+    "query": "SELECT name, image_url, price, color, details_intro, details_bullets, material, composition_parts, made_in, sustainable_detail, url FROM app_product WHERE LOWER(details_intro) LIKE LOWER('%formal%') OR LOWER(details_bullets) LIKE LOWER('%formal%') OR LOWER(category) LIKE LOWER('%suit%') OR LOWER(category) LIKE LOWER('%blazer%') OR LOWER(category) LIKE LOWER('%dress%') ORDER BY (price IS NULL), price LIMIT 50",
+    "product_name": "BEIGE CERCIS DRESS",
+    "color": "white",
+    "spec": "60% organic cotton, 40% LENZING™ LYOCELL",
+    "sustainable_detail": "51,18 liters of water used / 95% % of liters saved | 4,16 kg CO2 eq used / 48% % of kg CO2 eq saved | 32 people behind with safe work & better livelihoods | + 21 processes from design to sale in a product ethically traded | 13.560 km behind committed to sustainability | B Corp B Corp certification guarantees and product supply chain traceability",
+    "reason_selected": "Water savings and certified chain"
+  },
+  {
+    "look_name": "Elegant Spring/Holiday Dress Look",
+    "query": "SELECT name, image_url, price, color, details_intro, details_bullets, material, composition_parts, made_in, sustainable_detail, url FROMORDER BY (price IS NULL), price LIMIT 50",
+    "product_name": "BEIGE CERCIS DRESS",
+    "color": "white",
+    "spec": "60% organic cotton, 40% LENZING™ LYOCELL",
+    "sustainable_detail": "51,18 liters of water used / 95% % of liters saved | 4,16 kg CO2 eq used / 48% % of kg CO2 eq saved | 32 people behind with safe work & better livelihoods | + 21 processes from design to sale in a product ethically traded | 13.560 km behind committed to sustainability | B Corp B Corp certification guarantees and product supply chain traceability",
+    "reason_selected": "Water and emission savings, certified supply chain"
+  },
+  {
+    "look_name": "Neat and Polished Look for Guests",
+    "query": "SELECT name, image_url, price, color, details_intro, details_bullets, material, composition_parts, made_in, sustainable_detail, url FROM app_product WHERE LOWER(details_intro) LIKE LOWER('%neat%') OR LOWER(details_bullets) LIKE LOWER('%neat%') OR LOWER(category) LIKE LOWER('%blouse%') OR LOWER(category) LIKE LOWER('%dress%') OR LOWER(category) LIKE LOWER('%skirt%') ORDER BY (price IS NULL), price LIMIT 50",
+    "product_name": "WHITE KAORI DRESS",
+    "color": "white",
+    "spec": "70% Organic Cotton, 30% Recycled Cotton",
+    "sustainable_detail": "905,1 liters of water used / 66% % of liters saved | 7,95 kg CO2 eq used / 30% % of kg CO2 eq saved | 22925,1 km behind committed to sustainability | B Corp B Corp certification guarantees and product supply chain traceability",
+    "reason_selected": "Organic and recycled materials, certification"
+  }
+]
