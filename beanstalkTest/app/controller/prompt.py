@@ -5,12 +5,12 @@ import os
 
 # Import pipeline functions
 try:
-    from pipeline_runner import vedb_list, prompting_to_cody_query_plan, json_search_with_cody_plan
+    from pipeline_runner import vedb_list, prompting_to_cody_query_plan, json_search_with_cody_plan, save_search_history
 except Exception as e:
     # Fallback: add parent to path if running from subdir
     import sys, pathlib
     sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-    from pipeline_runner import vedb_list, prompting_to_cody_query_plan, json_search_with_cody_plan  # type: ignore
+    from pipeline_runner import vedb_list, prompting_to_cody_query_plan, json_search_with_cody_plan, save_search_history
 
 router = APIRouter(
     prefix="/prompt",
@@ -36,7 +36,8 @@ def run_prompt(req: PromptRequest):
         # 3) Execute plan against DB and let LLM pick best cody
         db_url = req.db_url or os.getenv("APP_DB_URL")
         model = req.model or os.getenv("CHAT_MODEL")
-        final_codies = json_search_with_cody_plan(plan, db_url=db_url, model=model)
+        search_id = save_search_history(db_url=db_url)
+        final_codies = json_search_with_cody_plan(plan, search_id=search_id, db_url=db_url, model=model)
         return {
             "query": req.query,
             "top_k": req.top_k,
