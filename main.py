@@ -1,7 +1,7 @@
 # main.py
 
 import uvicorn
-from config import config
+from app.config import config
 
 def main():
     uvicorn.run(app="app:app", host="0.0.0.0", port=config.PORT, reload=True)
