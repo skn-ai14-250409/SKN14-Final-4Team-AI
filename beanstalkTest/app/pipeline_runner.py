@@ -310,12 +310,12 @@ def _llm_pick_best_cody_from_candidates(
     data = json.loads(resp.choices[0].message.content)
     results = data.get("results", [])
 
-    # ✅ 여기 추가: 각 결과 아이템에 search_id를 포함
+    # 각 결과 아이템에 search_id를 포함
     for res in results:
         res["search_id"] = search_id
 
     # ----- 사후 보정 이하 원래 코드 유지 -----
-    style_to_candidates = candidate_rows
+
     for idx, res in enumerate(results):
         if "cody_style" in res:
             res["look_style"] = res.pop("cody_style", None)
@@ -324,8 +324,7 @@ def _llm_pick_best_cody_from_candidates(
         if look_style:
             update_search_history_look_style(search_id, look_style, db_url)
 
-        cody_style = look_style or plan[idx].get("cody_style")
-        cands = style_to_candidates.get(cody_style, {"top": [], "bottom": []})
+        cands = candidate_rows[idx] if idx < len(candidate_rows) else {"top":[], "bottom":[]}
 
         if not res.get("top") and cands["top"]:
             res["top"] = _row_to_product(cands["top"][0])
@@ -363,38 +362,36 @@ def json_search_with_cody_plan(
     model: str = DEFAULT_CHAT_MODEL
 ) -> Optional[List[Dict[str, Any]]]:
     eng = _engine(db_url)
-    candidate_rows: Dict[str, Dict[str, List[Dict]]] = {}
+    candidate_rows = []
 
     for item in plan:
-        cody_style = item["cody_style"]
         top_sql, bottom_sql = item["top_query"], item["bottom_query"]
-        candidate_rows[cody_style] = {"top": [], "bottom": []}
 
         # 상의
         try:
             validate_sql(top_sql)
             tops = pd.read_sql(top_sql, eng).to_dict(orient="records")
         except Exception as e:
-            print(f"[WARN] 상의 SQL 오류({cody_style}): {e}")
+            print(f"[WARN] 상의 SQL 오류: {e}")
             tops = []
         if not tops:
             fb_top_sql = _fallback_sql("top")
             print(f"[FB] 상의 fallback 실행: {fb_top_sql}")
             tops = pd.read_sql(fb_top_sql, eng).to_dict(orient="records")
-        candidate_rows[cody_style]["top"] = tops
 
         # 하의
         try:
             validate_sql(bottom_sql)
             bottoms = pd.read_sql(bottom_sql, eng).to_dict(orient="records")
         except Exception as e:
-            print(f"[WARN] 하의 SQL 오류({cody_style}): {e}")
+            print(f"[WARN] 하의 SQL 오류: {e}")
             bottoms = []
         if not bottoms:
             fb_bottom_sql = _fallback_sql("bottom")
             print(f"[FB] 하의 fallback 실행: {fb_bottom_sql}")
             bottoms = pd.read_sql(fb_bottom_sql, eng).to_dict(orient="records")
-        candidate_rows[cody_style]["bottom"] = bottoms
+        
+        candidate_rows.append({"top":tops, "bottom":bottoms})
 
     return _llm_pick_best_cody_from_candidates(plan, candidate_rows, search_id, model=model, db_url=db_url)
 
