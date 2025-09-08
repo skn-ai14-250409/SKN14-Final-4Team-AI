@@ -2,11 +2,11 @@ from fastapi import FastAPI, HTTPException
 import os, inspect
 from pydantic import BaseModel
 from sqlalchemy import text
-from .database import SessionLocal
-from app.pipeline_runner import vedb_list, prompting_to_cody_query_plan, json_search_with_cody_plan
+from database import SessionLocal
+from pipeline_runner import vedb_list, prompting_to_cody_query_plan, json_search_with_cody_plan
 
 # 라우터
-from .controller import items, users, admins, prompt
+from controller import items, users, admins, prompt
 
 app = FastAPI()
 
