@@ -1,0 +1,56 @@
+{
+  "results": [
+    {
+      "look_style": "페미닌 클래식룩",
+      "top": {
+        "name": "클래식 실크 블라우스",
+        "price": 89000,
+        "image_url": "https://example.com/images/silk-blouse-white.jpg",
+        "color": "화이트",
+        "spec": "실크 100% 소재의 클래식한 블라우스, 레귤러 핏으로 편안한 착용감",
+        "sustainable_detail": "GOTS 인증 실크 사용, 친환경 염료로 염색",
+        "url": "https://brand.com/products/classic-silk-blouse",
+        "search_history_product_id": 301
+      },
+      "bottom": {
+        "name": "A라인 미디 스커트",
+        "price": 65000,
+        "image_url": "https://example.com/images/a-line-skirt-navy.jpg",
+        "color": "네이비",
+        "spec": "폴리에스터 혼방 소재의 A라인 스커트, 무릎 아래 길이로 우아한 실루엣",
+        "sustainable_detail": "재활용 폴리에스터 60% 사용",
+        "url": "https://brand.com/products/a-line-midi-skirt",
+        "search_history_product_id": 302
+      },
+      "model_img_url":"http://dddd.com",
+      "reason_selected": "스타일 매칭표의 '페미닌 클래식룩'에 완벽하게 부합하는 조합입니다. 디테일이 최소화된 실크 블라우스와 A라인 미디스커트는 결혼식 하객룩으로 가장 무난하면서도 우아한 정석적인 스타일을 연출합니다. 화이트 블라우스와 네이비 스커트의 조합은 세련되면서도 격식있는 느낌을 줍니다.",
+      "search_id":100
+    },
+    {
+      "look_style": "시크·고급룩",
+      "top": {
+        "name": "하이넥 니트 탑",
+        "price": 72000,
+        "image_url": "https://example.com/images/highneck-knit-black.jpg",
+        "color": "블랙",
+        "spec": "메리노울 혼방의 하이넥 니트, 슬림핏으로 몸매 라인을 살려줌",
+        "sustainable_detail": "책임있는 양모 표준(RWS) 인증 원료 사용",
+        "url": "https://brand.com/products/highneck-knit-top",
+        "search_history_product_id": 303
+      },
+      "bottom": {
+        "name": "스트레이트 슬랙스",
+        "price": 95000,
+        "image_url": "https://example.com/images/straight-slacks-black.jpg",
+        "color": "블랙",
+        "spec": "울 혼방 소재의 스트레이트 핏 슬랙스, 정장 스타일로 고급스러운 느낌",
+        "sustainable_detail": "친환경 울 소재 사용, 무독성 염료 처리",
+        "url": "https://brand.com/products/straight-slacks",
+        "search_history_product_id": 304
+      },
+      "model_img_url":"http://dddd.com",
+      "reason_selected": "스타일 매칭표의 '시크·고급룩'에 따라 선택된 조합입니다. 넥라인이 높은 하이넥 니트와 블랙 스트레이트 슬랙스는 군더더기 없는 절제된 세련미를 표현합니다. 올 블랙 코디네이션으로 결혼식장에서도 품격있고 세련된 인상을 줄 수 있는 완벽한 하객룩입니다.",
+      "search_id":101
+    }
+  ]
+}
