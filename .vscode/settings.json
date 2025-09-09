@@ -1,0 +1,21 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "previewLimit": 50,
+            "server": "database-1.c386wgw8g00f.ap-northeast-2.rds.amazonaws.com",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "looplabel",
+            "database": "20250901_looplabel",
+            "username": "admin",
+            "askForPassword": true
+        }
+    ],
+    "python-envs.defaultEnvManager": "ms-python.python:conda",
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "python-envs.pythonProjects": []
+}

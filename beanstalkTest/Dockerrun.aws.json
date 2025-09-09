@@ -1,0 +1,15 @@
+{
+  "AWSEBDockerrunVersion": "1",
+  "Image": {
+    "Name": "jihunsong88/looplabel_api:latest",
+    "Update": "true"
+  },
+  "Ports": [
+    {
+      "ContainerPort": 8100,
+      "HostPort": 80
+    }
+  ],
+  "Volumes": [],
+  "Logging": "/var/log/nginx"
+}

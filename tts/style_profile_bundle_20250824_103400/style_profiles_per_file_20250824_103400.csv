@@ -1,0 +1,6 @@
+file,tokens,sentences,avg_tokens_per_sentence,ttr,declarative_pct,interrogative_pct,exclamatory_pct,formality_score,imperatives_estimated
+input1.txt,0,1,0.0,0.0,100.0,0.0,0.0,0.0,0
+input2.txt,0,1,0.0,0.0,100.0,0.0,0.0,-1.0,0
+input3.txt,0,1,0.0,0.0,100.0,0.0,0.0,0.0,0
+input4.txt,0,1,0.0,0.0,100.0,0.0,0.0,1.0,0
+input5.txt,0,1,0.0,0.0,100.0,0.0,0.0,1.0,0
