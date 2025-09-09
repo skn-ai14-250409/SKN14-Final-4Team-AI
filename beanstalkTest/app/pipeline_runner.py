@@ -190,7 +190,7 @@ def update_search_history_look_style(search_id: int, look_style: str, db_url: st
         """), {"look_style": look_style, "search_id": search_id})
 
 # --- VDB 조회 ---
-def vedb_list(user_query: str, namespace: str = "transcripts", top_k: int = 2) -> List[Dict[str, Any]]:
+def vedb_list(user_query: str, namespace: str = "transcripts-kr", top_k: int = 2) -> List[Dict[str, Any]]:
     api_key, index_name = os.getenv("PINECONE_API_KEY"), os.getenv("PINECONE_INDEX_NAME")
     pc = Pinecone(api_key=api_key)
     index = pc.Index(index_name)
