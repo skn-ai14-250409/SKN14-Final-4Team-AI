@@ -1,7 +1,7 @@
 # controller/admins.py
 
 from fastapi import APIRouter
-from model import mysql_test
+from ..model import mysql_test
 
 router = APIRouter(
     prefix='/admins',
