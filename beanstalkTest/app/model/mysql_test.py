@@ -2,7 +2,7 @@
 
 import mysql.connector
 from mysql.connector import Error
-from app.config import config
+from config import config
 
 
 def list_admin():
