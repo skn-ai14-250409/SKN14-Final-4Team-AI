@@ -14,7 +14,7 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # 앱 코드 복사 v (경로상의 문제 없음)
-COPY app .
+COPY . .
 
 # 컨테이너가 노출할 포트 (EB는 80 포트를 default로 바라봄)
 EXPOSE 8100

@@ -37,8 +37,8 @@ jobs:
       - name: 🏗️ Build and Push Docker images
         uses: docker/build-push-action@v2
         with:
-          context: ./beanstalkTest
-          file: ./beanstalkTest/Dockerfile
+          context: .
+          file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKER_IMAGENAME }}:latest
 
@@ -51,4 +51,4 @@ jobs:
           environment_name: ${{ secrets.AWS_EB_ENVIRONMENT_NAME }}
           region: ap-northeast-2
           version_label: "app-${{ github.sha }}-run${{ github.run_number }}"
-          deployment_package: ./beanstalkTest/Dockerrun.aws.json
+          deployment_package: Dockerrun.aws.json
