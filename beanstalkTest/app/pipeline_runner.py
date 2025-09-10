@@ -21,11 +21,11 @@ DEFAULT_DB_URL = os.getenv("APP_DB_URL")
 # 허용 스타일 & 키워드 (프롬프트/폴백에 공통 사용)
 # -------------------------------------------------------------------
 ALLOWED_STYLES = [
-    "캐주얼 단정룩",
-    "페미닌 클래식룩",
-    "시크·고급룩",
-    "모던 미니멀룩",
-    "포인트 활용룩",
+    "미니멀 (깔끔, 심플)",
+    "캐주얼 (편안, 데일리)",
+    "포멀 (정장, 단정)",
+    "페미닌 (부드럽고 여성스러움)",
+    "스트리트 (트렌디, 자유분방)",
 ]
 
 TOP_KEYWORDS = [
@@ -40,13 +40,13 @@ BOTTOM_KEYWORDS = [
 # --- 스타일 매칭표 ---
 STYLE_MATCHING_TABLE = """
 << 스타일 매칭 예시 >>
-| 스타일 | 상의 | 하의 | 아우터 | 슈즈 | 가방/액세서리 | 특징 |
-|------------------|---------------------------------------|-----------------------------------|-------------------------------------|--------------------------|-------------------------------|-------------------------------------------------|
-| 캐주얼 단정룩 | 블라우스 / 블랙 이너탑 | 데님(연청·흑청) or 코튼 팬츠 | 밝은 톤 린넨 재킷, 트위드 반팔 재킷 | 로퍼 / 플랫슈즈 | 얇은 벨트, 토트백 | 평소 캐주얼 선호자도 부담 없이 단정하게 |
-| 페미닌 클래식룩 | 블라우스(디테일 최소) / 여름 니트 | 롱스커트(H라인) or A라인 미니스커트 | 반팔 재킷 or 니트 | 앞코 얄상한 힐 / 샌들 | 이어링, 스카프, 토트백 | 가장 무난하면서도 우아한 정석 하객룩 |
-| 시크·고급룩 | 넥라인 높은 니트·드레이프 탑 | 블랙 슬랙스(스트레이트핏) | 노카라 재킷 / 수트 셋업 | 얄상한 구두 or 블록힐 | 미니 토트백, 주얼리 | 군더더기 없는 절제된 세련미 |
-| 모던 미니멀룩 | 단색 탑(화이트/블랙) | 화이트 슬랙스 / 크림 코튼 팬츠 | 베이지 재킷 | 로퍼 / 뮬 | 스카프, 가죽 토트 | 심플+깨끗한 인상, 사진발 잘 받음 |
-| 포인트 활용룩 | 블랙 원피스 / 블라우스 | 원피스 or H라인 스커트 | (아우터 생략 가능) | 굽 있는 샌들 | 스카프 / 포인트 이어링 | 전체는 단정, 소품으로 화사함 강조 |
+| 스타일                  | 상의                        | 하의                          | 특징                                     |
+| -------------------- | ------------------------- | --------------------------- | -------------------------------------- |
+| **미니멀 (깔끔, 심플)**     | 화이트 셔츠, 솔리드 티셔츠, 슬림핏 니트   | 블랙 슬랙스, 그레이 와이드 팬츠, H라인 스커트 | 패턴 최소화·모노톤 중심, 실루엣 강조, 액세서리 최소         |
+| **캐주얼 (편안, 데일리)**    | 루즈핏 맨투맨, 스트라이프 티셔츠, 데님 셔츠 | 청바지, 치노 팬츠, 조거 팬츠           | 활동성 중심, 자연 소재(코튼·데님), 컬러 포인트로 경쾌함      |
+| **포멀 (정장, 단정)**      | 블라우스, 테일러드 자켓, 셔츠         | 슬랙스, 펜슬 스커트, 세미와이드 팬츠       | 직장·공식석상 적합, 세트 매치 시 완성도 ↑, 뉴트럴 톤·고급 소재 |
+| **페미닌 (부드럽고 여성스러움)** | 리본 블라우스, 레이스 니트, 오프숄더 톱   | 플레어 스커트, 미디스커트, 슬림핏 슬랙스     | 곡선 실루엣, 파스텔/뉴드 컬러, 러플·레이스·주름 디테일       |
+| **스트리트 (트렌디, 자유분방)** | 오버핏 후드티, 그래픽 티셔츠, 크롭 톱    | 카고 팬츠, 와이드 데님, 조거 팬츠        | 과감한 실루엣·프린트, 스니커즈/모자 매치 중요, 서브컬처 감성    |
 """
 
 # --- 유틸리티 함수 ---
@@ -159,6 +159,8 @@ DEV_RULES_CODY = (
 )
 
 # --- DB 함수 ---
+
+# 검색 기록 저장
 def save_search_history(db_url: str = DEFAULT_DB_URL) -> int:
     eng = _engine(db_url)
     with eng.begin() as conn:
@@ -171,6 +173,7 @@ def save_search_history(db_url: str = DEFAULT_DB_URL) -> int:
             raise RuntimeError("Failed to obtain search_id.")
         return sid
 
+# 검색 기록 + 상품 연결
 def save_search_history_product(search_id: int, product_id: int, db_url: str = DEFAULT_DB_URL) -> int:
     eng = _engine(db_url)
     with eng.begin() as conn:
@@ -190,7 +193,7 @@ def update_search_history_look_style(search_id: int, look_style: str, db_url: st
         """), {"look_style": look_style, "search_id": search_id})
 
 # --- VDB 조회 ---
-def vedb_list(user_query: str, namespace: str = "transcripts-kr", top_k: int = 2) -> List[Dict[str, Any]]:
+def vedb_list(user_query: str, namespace: str = "transcripts-kr", top_k: int = 1) -> List[Dict[str, Any]]:
     api_key, index_name = os.getenv("PINECONE_API_KEY"), os.getenv("PINECONE_INDEX_NAME")
     pc = Pinecone(api_key=api_key)
     index = pc.Index(index_name)
@@ -404,7 +407,7 @@ if __name__ == "__main__":
     print(f"search_id = {search_id}")
 
     print("\n=== 1단계: 벡터DB 조회 ===")
-    looks = vedb_list(q, top_k=2)
+    looks = vedb_list(q, top_k=1)
     if not looks:
         print("❌ 벡터DB에서 스타일을 찾지 못해 코디 추천을 진행할 수 없습니다.")
         sys.exit(1)
