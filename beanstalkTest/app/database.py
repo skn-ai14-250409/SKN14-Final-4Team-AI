@@ -4,7 +4,7 @@ load_dotenv()
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-MYSQL_URL = os.getenv("MYSQL_URL")
+MYSQL_URL = os.getenv("APP_DB_URL")
 if not MYSQL_URL:
     raise RuntimeError("MYSQL_URL not set")
 
