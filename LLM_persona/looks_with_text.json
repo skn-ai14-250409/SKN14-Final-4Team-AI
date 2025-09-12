@@ -55,5 +55,5 @@
   ],
   "style_text": "이 룩은 정말 간편하면서도 스타일리시해요. 어떤 상황에서도 편안함을 느낄 수 있는 조화로운 조합이거든요.",
   "opinion_text": "여러분은 이 룩을 어떻게 생각해요? 혹시 여러분의 스타일은 어떤 거예요?",
-  "voice": "https://elasticbeanstalk-ap-northeast-2-967883357924.s3.amazonaws.com/model_tts/tts/look-1_tts0905.mp3?AWSAccessKeyId=AKIA6CWSX73SO2O2IP3Y&Signature=bdHusR%2FdZ%2B7fyreOGZJ82MAjSGI%3D&Expires=1757071062"
+  "voice": "https://elasticbeanstalk-ap-northeast-2-967883357924.s3.amazonaws.com/model_tts/tts/look-1_tts0905.mp3"
 }
