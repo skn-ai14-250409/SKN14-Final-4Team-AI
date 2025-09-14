@@ -7,9 +7,14 @@ pandas>=2.2
 
 openai>=1.35
 pinecone
+langchain
+langchain-openai
 
 pydantic>=2.9
 
 requests>=2.32
 
 mysql-connector-python>=9.0
+
+pillow
+boto3
