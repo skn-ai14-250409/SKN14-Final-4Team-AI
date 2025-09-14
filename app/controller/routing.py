@@ -5,6 +5,7 @@ import uuid
 from typing import Literal
 
 from fastapi import APIRouter, Body
+from fastapi.responses import HTMLResponse
 from pinecone import Pinecone
 from sqlalchemy import text
 
@@ -112,14 +113,28 @@ prompt_style_suggest     = PromptTemplate.from_template("""
 이제는 사용자에게 이 <<룩 정보>> 의 내용을 잘 정리하여 그대로 추천합니다.
 <<룩 정보>>와 <<사용자 질의>> 에 어울리는 답변을 생성하여 반환합니다.
 
-1. 답변에서 인사말/당신을 소개하는 문구/불필요한 미사여구는 제외합니다.
-2. 답변은 bootstrap5 가 적용된 html 로 반환합니다.
-3. <<룩 정보>> 는 카드형식어야 하고, 이미지/이름/상세정보 등이 반드시 카드에 표시되어야 합니다. 내용이 너무 길다면 어느정도 축소해주세요.
-3.1. 카드에는 <<룩 정보>> 의 이미지와 스타일명, 스타일 설명만을 사용해야 합니다.
-3.2. 카드를 클릭하면 해당 스타일에 대한 상세페이지로 이동할 수 있게 a 태그로 감싸인 형태여야 합니다.
+1. 답변에서 인사말/당신을 소개하는 문구는 제외합니다.
+2. 반드시 <<html 양식>>을 지켜야 합니다. 다른 요소나 클래스를 임의로 넣지 마세요.
 
 <<룩 정보>>
 {styles_info}
+
+<<html 양식>>
+1. 반드시 아래 코드블럭의 양식을 지켜야 합니다.
+1.1. 단 한 개의 div.product-container 가 여러개의 div.product-card를 감싼 형태여야만 합니다.
+1.2. div.product-container 안에는 <<룩 정보>>의 룩 개수만큼의 div.product-card 가 들어갑니다.
+```html
+<div class="product-container">
+    <div class="product-card" onclick="selectProduct(this)" data-id="(여기에 룩의 id 가 들어갑니다.)">
+        <div class="product-image" style="background-image: url('(여기에 룩의 이미지 URL 이 들어갑니다.)');"></div>
+            <div class="heart-icon unliked" onclick="toggleHeart(this)">🤍</div>
+            <div class="product-info">
+            <div class="product-title">(여기에 룩의 이름이 들어갑니다.)</div>
+            <div class="product-description">(여기에 룩의 설명이 들어갑니다.)</div>
+        </div>
+    </div>
+</div>
+```
 
 <<사용자 질의>>
 {query}
@@ -139,9 +154,23 @@ prompt_product_find      = PromptTemplate.from_template("""
 당신은 재활용소재로 패션제품을 만드는 회사에서 고문으로 일하고 있는 친환경 활동가입니다.
 JSON 양식으로 구성된 <<제품정보>>의 내용만을 사용하여 사용자의 질의에 답변합니다. 
 1. 답변에서 인사말/당신을 소개하는 문구/불필요한 미사여구는 제외합니다.
-2. 답변은 bootstrap5 가 적용된 html 로 반환합니다.
-3. <<제품정보>> 가 여러개일 경우 좌우로 스크롤할 수 있는 HTML 요소로 만들어서 답변에 추가해야 합니다.
-4. 제품에 대한 내용은 카드형식으로 구성하고, 제품이미지/제품이름/제품가격/제품URL 등이 반드시 카드에 표시되어야 합니다.
+2. 반드시 <<html 양식>>을 지켜야 합니다. 다른 요소나 클래스를 임의로 넣지 마세요.
+
+<<html 양식>>
+1. 반드시 아래 코드블럭의 양식을 지켜야 합니다.
+1.1. 단 한 개의 div.product-container 가 여러개의 div.product-card를 감싼 형태여야만 합니다.
+1.2. div.product-container 안에는 <<제품정보>>의 제품 개수만큼의 div.product-card 가 들어갑니다.
+```html
+<div class="product-container">
+    <div class="product-card" onclick="selectProduct((제품이 상의면 'top', 하의면 'bottom'이 들어갑니다.))" data-id="(여기에 제품의 id 가 들어갑니다.)">
+        <div class="product-image" style="background-image: url('(여기에 제품의 이미지 URL 이 들어갑니다.)');"></div>
+            <div class="product-info">
+            <div class="product-title">(여기에 제품의 이름이 들어갑니다.)</div>
+            <div class="product-description">(여기에 제품의 설명이 들어갑니다.)</div>
+        </div>
+    </div>
+</div>
+```
 
 <<제품정보>>
 {products_info}
@@ -227,6 +256,7 @@ def __get_styles_from_vdb(query:str, top_k=10) -> list[dict]:
 def __ask_style_sheet(query, styles:list[dict]):
     message = prompt_style_compose.format(query=query, style_tips=json.dumps(styles))
     result  = simple_user_llm(message)
+    # print(f"{result=}")
 
     return json.loads(result)
 
@@ -248,7 +278,7 @@ def __ask_image_composition(look_style, image_urls):
             presign_expire=0
         )
         s3_key = uploader.build_key(out_name, str(_uuid))
-        png_bytes = generate_model_wearing_refs(image_urls, prompt)
+        png_bytes = generate_model_wearing_refs(image_urls, prompt, size=(512,512))
         res = uploader.put_bytes(png_bytes, s3_key, content_type="image/png")
         return res.get('url')
     except Exception as e:
@@ -289,7 +319,8 @@ def __style_thread(user_id, style:dict, context:list):
             )
             result = db.execute(text(_query), {"top":top["id"], "bottom":bottom["id"]})
             row = result.fetchone()
-            if not row:
+            # print(f"{row.id if row else row}")
+            if not row :
                 #TODO 이미지 합성 실패 하면 빈 문자열만 나옴. 보완 필요.
                 look_img_url = __ask_image_composition(look_style, [top["image"], bottom["image"]])
 
@@ -297,6 +328,7 @@ def __style_thread(user_id, style:dict, context:list):
                 db.add(row)
                 db.commit()
                 db.refresh(row)
+                # print(f"{look_style} image = {look_img_url}\n{row.id=}\n========================")
 
         context.append({
             "look_id"    : row.id,
@@ -379,9 +411,11 @@ def api_ask(param:dict = BODY_EXAMPLE):
     result  = process(query, user_id=user_id)       # 2 분류에 맞게 사용자 질의를 재정의하여 데이터 전달하기
 
     ############################################# 3 각 흐름에 맞게 동작 후, 분류에 따라 결과 반환하기
-    return {
-        "intent": intent,
-        "result": result
-    }
+    # return {
+    #     "intent": intent,
+    #     "result": result
+    # }
+    return HTMLResponse(content=result, status_code=200)
+    # return result
 
 
