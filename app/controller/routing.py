@@ -7,7 +7,6 @@ from typing import Literal
 from fastapi import APIRouter, Body
 from pinecone import Pinecone
 from sqlalchemy import text
-from torch.nn.functional import embedding
 
 from S3.add_image_by_llm import build_prompt, generate_model_wearing_refs, S3Uploader
 from app import models
