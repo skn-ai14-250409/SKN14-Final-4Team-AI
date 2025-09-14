@@ -6,14 +6,15 @@ from app.database import SessionLocal
 from app.pipeline_runner import vedb_list, prompting_to_cody_query_plan, json_search_with_cody_plan
 
 # 라우터
-from app.controller import items, users, admins, prompt
+from app.controller import items, users, admins, prompt, routing
 
 app = FastAPI()
 
 # router 등록
-app.include_router(items.router)
-app.include_router(users.router)
-app.include_router(admins.router)
+# app.include_router(items.router)
+# app.include_router(users.router)
+# app.include_router(admins.router)
+app.include_router(routing.router)
 app.include_router(prompt.router)
 
 class QueryBody(BaseModel):
@@ -59,22 +60,3 @@ def root_post(body: QueryBody):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Pipeline error: {e}")
-
-
-# @app.get("/healthz")
-# def healthz(db=Depends(get_db)):
-#     db.execute(text("SELECT 1"))
-#     return {"status": "ok"}
-
-# 테스트용 포인트
-@app.get("/db-test")
-def db_test():
-    try:
-        db = SessionLocal()
-        result = db.execute(text("SELECT 1")).scalar()
-        return {"db_status": "ok", "result": result}
-    except Exception as e:
-        return {"db_status": "error", "detail": str(e)}
-    
-
-
