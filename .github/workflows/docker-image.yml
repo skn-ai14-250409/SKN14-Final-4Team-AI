@@ -42,6 +42,9 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKER_IMAGENAME }}:latest
 
+      - name: 🕰️ Store currrent time temporary
+        run: echo "RUN_DATE=$(date -u +'%Y-%m-%dT%H:%M')" >> $GITHUB_ENV
+
       - name: 🚀 Deploy Beanstalk
         uses: einaregilsson/beanstalk-deploy@v20
         with:
@@ -50,5 +53,5 @@ jobs:
           application_name: ${{ secrets.AWS_EB_APPLICATION_NAME }}
           environment_name: ${{ secrets.AWS_EB_ENVIRONMENT_NAME }}
           region: ap-northeast-2
-          version_label: "app-${{ github.sha }}-run${{ github.run_number }}"
+          version_label: "app-${{ github.sha }}-run${{ github.run_number }}-T:${{ env.RUN_DATE }}"
           deployment_package: Dockerrun.aws.json
