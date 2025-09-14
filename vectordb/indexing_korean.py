@@ -211,7 +211,7 @@ def ingest_files(file_paths, *, namespace=NAMESPACE, add_snippet=True):
                 vectors.append({
                     "id": ids[k],
                     "values": vec,
-                    "metadata": {**metas[k], "doc_id": doc_id, "chunk_id": k, "lang": "en"},
+                    "metadata": {**metas[k], "doc_id": doc_id, "chunk_id": k, "lang": "ko"},
                 })
 
         index.upsert(vectors=vectors, namespace=namespace)
