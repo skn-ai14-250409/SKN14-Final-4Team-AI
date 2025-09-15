@@ -13,8 +13,8 @@ from app.pipeline_runner import vedb_list, prompting_to_cody_query_plan, json_se
 origins = [
     "http://localhost:8000",  # 개발 환경 프론트엔드
     "http://127.0.0.1:8000",  # 개발 환경 프론트엔드
-    "http://www.looplabel.com",  # 실제 서비스 도메인
-    "https://www.looplabel.com",  # 실제 서비스 도메인
+    "http://www.looplabel.site",  # 실제 서비스 도메인
+    "https://www.looplabel.site",  # 실제 서비스 도메인
 ]
 
 app = FastAPI()
