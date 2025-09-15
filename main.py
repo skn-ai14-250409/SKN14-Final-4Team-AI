@@ -10,11 +10,18 @@ from app.controller import prompt, routing
 from app.database import SessionLocal
 from app.pipeline_runner import vedb_list, prompting_to_cody_query_plan, json_search_with_cody_plan
 
+origins = [
+    "http://localhost:8000",  # 개발 환경 프론트엔드
+    "http://127.0.0.1:8000",  # 개발 환경 프론트엔드
+    "http://www.looplabel.com",  # 실제 서비스 도메인
+    "https://www.looplabel.com",  # 실제 서비스 도메인
+]
+
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 개발 중이면 ["*"] 도 가능
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
