@@ -270,7 +270,7 @@ def main():
 if __name__ == "__main__":
     print("🚀 YouTube 대량 자막 수집기 시작")
     print("📦 필요한 패키지: pip install youtube-transcript-api")
-    print(f"📂 입력 파일: final_urls.txt")
+    print(f"📂 입력 파일: youtube_urls.txt")
     print(f"📁 출력 폴더: transcripts_output")
     print()
     
