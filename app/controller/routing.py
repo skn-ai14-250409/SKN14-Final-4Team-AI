@@ -200,7 +200,6 @@ def __get_products_from_vdb(query:str, top_k=3, filter=None):
             "url"         : meta.get("url"),
             "saved_water" : __parse_water_saved(json.loads(meta.get("water_saved_l"))),
             "saved_co2"   : __parse_co2_saved(json.loads(meta.get("co2_saved_kg"))),
-            "url"         : meta.get("url"),
             "spec"        : meta.get("spec"),
         })
     return products
@@ -249,7 +248,7 @@ def __ask_image_composition(look_style, image_urls):
             presign_expire=0
         )
         s3_key = uploader.build_key(out_name, str(_uuid))
-        png_bytes = generate_model_wearing_refs(image_urls, prompt, size=(512,512))
+        png_bytes = generate_model_wearing_refs(image_urls, prompt)
         res = uploader.put_bytes(png_bytes, s3_key, content_type="image/png")
         return res.get('url')
     except Exception as e:
