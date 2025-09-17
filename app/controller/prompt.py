@@ -48,6 +48,7 @@ def run_prompt(req: PromptRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Pipeline error: {e}")
 
+# AWS TG HealthChecker
 @router.get("/health")
 def health():
     return {"status": "ok"}

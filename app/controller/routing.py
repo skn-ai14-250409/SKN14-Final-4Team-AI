@@ -16,35 +16,6 @@ from app.database import SessionLocal
 #################################################### FastAPI api Routing
 router = APIRouter(prefix="/api", tags=["API"], responses={404: {"description": "Not found"}} )
 
-#################################################### Intent Routing 파라미터 예시
-BODY_EXAMPLE:dict = Body(None, examples=[{
-        "explain" : "소재 관련 질문 예시( material_explain )",
-        "query": "폴리에스터는 왜 재활용하는거야?",
-        "user_id": 1
-    },
-    {
-        "explain" : "의류 제품 관련 질문 예시( product_find )",
-        "query": "재활용소재로 만든 옷들은 뭐가 있어?",
-        "user_id": 1
-    },
-    {
-        "explain" : "스타일링 관련 질문 예시( outfit_reco )",
-        "query": "날씨가 슬슬 선선해지는데, 어떤 옷을 입을까?",
-        "user_id": 1
-    },
-    {
-        "explain" : "친환경인증 관련 질문 예시( cert_verify )",
-        "query": "RCS 인증마크는 뭐하는 녀석이야?",
-        "user_id": 1
-    },
-    {
-        "explain" : "기타 fallback 예시( fallback )",
-        "query": "날씨가 슬슬 선선해지는데, 감기에 좋은 음식이 뭐야?",
-        "user_id": 1
-    }]
-)
-
-
 #################################################### 전역 변수 선언
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import OpenAIEmbeddings
@@ -400,22 +371,44 @@ def __distinguish(query:str):
     return simple_user_llm(message)
 
 
+#################################################### Intent Routing 파라미터 예시
+BODY_EXAMPLE:dict = Body(None, examples=[{
+        "explain" : "소재 관련 질문 예시( material_explain )",
+        "query": "폴리에스터는 왜 재활용하는거야?",
+        "user_id": 1
+    },
+    {
+        "explain" : "의류 제품 관련 질문 예시( product_find )",
+        "query": "재활용소재로 만든 옷들은 뭐가 있어?",
+        "user_id": 1
+    },
+    {
+        "explain" : "스타일링 관련 질문 예시( outfit_reco )",
+        "query": "날씨가 슬슬 선선해지는데, 어떤 옷을 입을까?",
+        "user_id": 1
+    },
+    {
+        "explain" : "친환경인증 관련 질문 예시( cert_verify )",
+        "query": "RCS 인증마크는 뭐하는 녀석이야?",
+        "user_id": 1
+    },
+    {
+        "explain" : "기타 fallback 예시( fallback )",
+        "query": "날씨가 슬슬 선선해지는데, 감기에 좋은 음식이 뭐야?",
+        "user_id": 1
+    }]
+)
+
 ####################################################
 @router.post("/ask")
-def api_ask(param:dict = BODY_EXAMPLE):
+def api_ask(param:dict = Body(None, examples=[{
+        "query": "폴리에스터는 왜 재활용하는거야?",
+        "user_id": 1
+    }])):
     query   = param["query"]
     user_id = param.get("user_id")
 
-    intent  = __distinguish(query)                  # 1 질의를 사전에 정해놓은 분류대로 나누기
-    process = INTENTS[intent]["process"]
-    result  = process(query, user_id=user_id)       # 2 분류에 맞게 사용자 질의를 재정의하여 데이터 전달하기
-
-    ############################################# 3 각 흐름에 맞게 동작 후, 분류에 따라 결과 반환하기
-    # return {
-    #     "intent": intent,
-    #     "result": result
-    # }
+    intent  = __distinguish(query)                  # 질의를 사전에 정해놓은 분류대로 나누기
+    process = INTENTS[intent]["process"]            # 수행할 함수 확인
+    result  = process(query, user_id=user_id)       # 분류에 맞게 사용자 질의를 재정의하여 데이터 전달하기
     return HTMLResponse(content=result, status_code=200)
-    # return result
-
-
