@@ -1,5 +1,7 @@
+import html
 import json
 import os
+import re
 import threading
 import uuid
 from typing import Literal
@@ -78,6 +80,65 @@ prompt_style_compose     = PromptTemplate.from_template("""
     {{"look_style" : "깔끔한 미니멀", "score":0.4987, "top" : {{"desc":"slimfit knit"}}, "bottom" : {{"desc":"H-line skirt"}}, "desc" : "패턴 최소화·모노톤 중심, 실루엣 강조, 액세서리 최소"}}
 ]
 """)    # 스타일 조합을 짜달라고 요청
+prompt_style_compose2    = PromptTemplate.from_template("""
+당신은 재활용소재로 패션제품을 만드는 회사에서 고문으로 일하고 있는 친환경 활동가이자 패션과 스타일링의 전문가입니다.
+<<스타일링 팁>> 만 사용하여 <<사용자 질의>> 에 어울리는 3개의 스타일을 추천해야 합니다.
+1. 답변에 인사말/당신을 소개하는 문구/불필요한 미사여구는 제외합니다.
+2. <<스타일링 팁>> 을 <<스타일링 표 예시>> 와 같이 구성한 뒤, <<HTML 출력 예시>>에 맞게 변경한 html 결과만 반환합니다.
+
+<<스타일링 팁>>
+{style_tips}
+
+<<사용자 질의>>
+{query}
+
+<<스타일링 표 예시>>
+```markdown
+| 스타일                | score  | 상의/하의 조합(무조건 상의와 하의만 조합합니다.)                                    | 특징                                                    |
+|:----------------------|--------|:------------------------------------------------------------------------------------|:--------------------------------------------------------|
+| 미니멀 (깔끔, 심플)   | 0.4987 | 화이트 셔츠/블랙 슬랙스, 솔리드 티셔츠/그레이 와이드 팬츠, 슬림핏 니트/H라인 스커트 | 패턴 최소화·모노톤 중심, 실루엣 강조, 액세서리 최소     |
+| 캐주얼 (편안, 데일리) | 0.4811 | 루즈핏 맨투맨/청바지, 스트라이프 티셔츠/치노 팬츠, 데님 셔츠/조거 팬츠              | 활동성 중심, 자연 소재(코튼·데님), 컬러 포인트로 경쾌함 |
+```
+
+<<HTML 출력 예시>>
+<div class="text">(여기에는 전체 스타일들에 대한 간략한 종합 설명을 50자 내외로 넣어주세요.)</div>
+<table class="style_text_table">
+    <tbody>
+        <tr class="title">
+            <th rowspan="5">깔끔하고 심플한 미니멀</th><td>패턴 최소화·모노톤 중심, 실루엣 강조, 액세서리 최소</td>
+        </tr>
+        <tr class="style"><td>(여기에는 반드시 상의와 하의만 추가하고, / 로 구분합니다.)화이트 셔츠 / 블랙 슬랙스</td></tr>
+        <tr class="style"><td>솔리드 티셔츠 / 그레이 와이드 팬츠</td></tr>
+        <tr class="style"><td>슬림핏 니트 / H라인 스커트</td></tr>
+        <tr class="button"><td><button onclick="sendMessage('(여기에는 각 스타일에 해당하는 제품들을 보고싶다는 문구를 넣어주세요.)');">제품보기</button></td></tr>
+        <tr class="title">
+            <th rowspan="5">편안한 데일리 캐주얼</th><td>활동성 중심, 자연 소재(코튼·데님), 컬러 포인트로 경쾌함</td>
+        </tr>
+        <tr class="style"><td>루즈핏 맨투맨 / 청바지</td></tr>
+        <tr class="style"><td>스트라이프 티셔츠 / 치노 팬츠</td></tr>
+        <tr class="style"><td>데님 셔츠 / 조거 팬츠</td></tr>
+        <tr class="button"><td><button onclick="sendMessage('캐주얼 스타일의 제품들을 보고싶어.');">제품보기</button></td></tr>
+    </tbody>
+</table>
+<audio controls loop="false" src="{tts_voice}"></audio>
+""")    # 스타일 조합을 짜달라고 요청
+prompt_find_product_type = PromptTemplate.from_template("""
+이전 대화내역들과 <<사용자 질의>>를 비교하여, 사용자가 어떤 제품을 찾고자 하는지 판별하세요. 
+1. 답변은 반드시 <<출력양식>> 을 따라 JSON 으로만 반환해야 합니다.
+
+<<출력양식>>
+- 사용자가 이전 대화내역에서 검색했던 스타일이나 제품을 찾고있는 경우
+{{
+    "type" : "related", "query" : "(여기에 이전 대화내역에서 <<사용자 질의>>와 관련있는 스타일이나 제품에 대한 내용을 간추려서 넣어주세요.)"
+}}
+- 사용자가 이전 대화내역과 관련없이 제품을 찾고있는 경우
+{{
+    "type" : "original", "query" : "(여기에 <<사용자 질의>>를 바꾸지말고 그대로 넣어주세요.)"
+}}
+
+<<사용자 질의>>
+{query}
+""")    # 이전 스타일검색 결과의 제품을 찾는지, 그냥 제품을 찾는지 파악 요청
 prompt_style_suggest     = PromptTemplate.from_template("""
 당신은 재활용소재로 패션제품을 만드는 회사에서 고문으로 일하고 있는 친환경 활동가이자 패션과 스타일링의 전문가입니다.
 이전에 당신은 <<사용자 질의>> 에 대한 답변으로 <<룩 정보>> 를 찾아냈고,
@@ -126,7 +187,6 @@ prompt_product_find      = PromptTemplate.from_template("""
 JSON 양식으로 구성된 <<제품정보>>의 내용만을 사용하여 사용자의 질의에 답변합니다. 
 1. 답변에서 인사말/당신을 소개하는 문구/불필요한 미사여구는 제외합니다.
 2. 반드시 <<html 양식>>을 지켜야 합니다. 다른 요소나 클래스를 임의로 넣지 마세요.
-
 <<html 양식>>
 1. 반드시 아래 코드블럭의 양식을 지켜야 합니다.
 1.1. 단 한 개의 div.product-container 가 여러개의 div.product-card를 감싼 형태여야만 합니다.
@@ -142,7 +202,28 @@ JSON 양식으로 구성된 <<제품정보>>의 내용만을 사용하여 사용
     </div>
 </div>
 ```
-
+<<제품정보>>
+{products_info}
+""")    # 의류제품관련   질문에 대한 답변 생성
+prompt_product_find2     = PromptTemplate.from_template("""
+당신은 재활용소재로 패션제품을 만드는 회사에서 고문으로 일하고 있는 친환경 활동가입니다.
+JSON 양식으로 구성된 <<제품정보>>의 내용만을 사용하여 사용자의 질의에 답변합니다. 
+1. 답변에서 인사말/당신을 소개하는 문구/불필요한 미사여구는 제외합니다.
+2. 반드시 <<html 양식>>을 지켜야 합니다. 다른 요소나 클래스를 임의로 넣지 마세요.
+<<html 양식>>
+<div class="text">(여기에 제품들에 대한 종합적인 평가를 50자 내외의 텍스트로 넣어주세요.)</div>
+<div class="product-container">
+    (div.product-container 하위에 여러개의 div.product-card 가 들어갑니다.)
+    <div class="product-card" onclick="selectProduct((제품이 상의면 'top', 하의면 'bottom'이 들어갑니다.))" data-id="(여기에 제품의 id 가 들어갑니다.)" data-url="(여기에 제품의 상세페이지 URL 이 들어갑니다.)">
+        <div class="product-image" style="background-image: url('(여기에 제품의 이미지 URL 이 들어갑니다.)');"></div>
+            <div class="product-info">
+            <div class="product-title">(여기에 제품의 이름이 들어갑니다.)</div>
+            <div class="product-description">(여기에 제품의 설명이 들어갑니다.)</div>
+        </div>
+        </a>
+    </div>
+</div>
+<audio controls loop="false" src="{tts_voice}"></audio>
 <<제품정보>>
 {products_info}
 """)    # 의류제품관련   질문에 대한 답변 생성
@@ -165,6 +246,12 @@ prompt_fallback          = PromptTemplate.from_template("""
 
 
 #################################################### 제품 벡터DB 조회
+def __refine(text):
+    text = re.sub(r"<(\w+) [^>]*>", r"<\1>", text)
+    text = re.sub(r"[\n\r\t]", "", text)
+    text = re.sub(r"\s+", " ", text)
+    text = html.escape(text, quote=True)
+    return text
 def __parse_water_saved(x:dict):
     used_l  = x.get('water_used_l',0)
     saved_l = x.get('water_saved_l',0)
@@ -190,7 +277,7 @@ def __get_products_from_vdb(query:str, top_k=3, filter=None):
         meta = match["metadata"]
         products.append({
             "id"          : int(meta.get("id")),
-            "name"        : meta.get("name"),
+            "name"        : __refine(meta.get("name")),
             "category"    : meta.get("category"),
             "price"       : f"{meta.get('currency')} {meta.get('price')}",
             "image"       : meta.get("image_url"),
@@ -200,7 +287,7 @@ def __get_products_from_vdb(query:str, top_k=3, filter=None):
             "url"         : meta.get("url"),
             "saved_water" : __parse_water_saved(json.loads(meta.get("water_saved_l"))),
             "saved_co2"   : __parse_co2_saved(json.loads(meta.get("co2_saved_kg"))),
-            "spec"        : meta.get("spec"),
+            "spec"        : __refine(meta.get("spec")),
         })
     return products
 
@@ -220,15 +307,6 @@ def __get_styles_from_vdb(query:str, top_k=10) -> list[dict]:
             "snippet"     : meta.get("snippet"),
         })
     return styles
-
-
-#################################################### 스타일링 정보를 LLM 으로 가공
-def __ask_style_sheet(query, styles:list[dict]):
-    message = prompt_style_compose.format(query=query, style_tips=json.dumps(styles))
-    result  = simple_user_llm(message)
-    # print(f"{result=}")
-
-    return json.loads(result)
 
 
 #################################################### S3 설정 및 이미지 합성
@@ -262,6 +340,15 @@ def __ask_look_list(query, looks):
 
 
 ####################################################
+def __ask_style_sheet(query, styles:list[dict]):
+    message = prompt_style_compose.format(query=query, style_tips=json.dumps(styles))
+    result  = simple_user_llm(message)
+    return json.loads(result)
+def __ask_style_sheet2(query, styles:list[dict], user_id=None, ai_id=None):
+    message = prompt_style_compose2.format(query=query, style_tips=json.dumps(styles, ensure_ascii=False), tts_voice="")
+    return simple_user_llm(message, user_id=user_id, ai_id=ai_id)
+
+
 def __get_product_info_for_top_bottom(style, key:Literal["top", "bottom"], look_style, look_desc):
     target = style[key]
     keys   = target.keys()
@@ -313,23 +400,36 @@ def __material_explain(query:str, **kwargs):
     msg_system = prompt_material_explain.format()
 
     return simple_user_llm(query, [{"role": "system", "content": msg_system}])
-def __product_find(query:str, **kwargs):
-    products   = __get_products_from_vdb(query)       # list[dict]
-    msg_system = prompt_product_find.format(products_info=json.dumps(products))
+def __product_find(query:str, user_id, ai_id, **kwargs):
+    tmp_prompt  = prompt_find_product_type.format(query=query)
+    result_dict = simple_user_llm(tmp_prompt, model="gpt-5-mini-2025-08-07", user_id=user_id, ai_id=ai_id)
+    result_dict = json.loads(result_dict)
 
-    return simple_user_llm(query, [{"role": "system", "content": msg_system}])
-def __outfit_reco(query:str, user_id, **kwargs):
-    styles = __get_styles_from_vdb(query, top_k=20)     # list[dict] :: 벡터DB 에서 스타일 정보 조회
-    styles = __ask_style_sheet(query, styles)           # list[dict] :: LLM 으로 스타일양식 정리
+    new_query = result_dict["query"]
+    products  = __get_products_from_vdb(new_query)  # list[dict]
+    if result_dict["type"] == "related":
+        msg_system = prompt_product_find2.format(products_info=json.dumps(products, ensure_ascii=False), tts_voice="")
+    else:
+        msg_system = prompt_product_find.format(products_info=json.dumps(products, ensure_ascii=False))
 
-    context = []
-    threads = [threading.Thread(target=__style_thread, args=(user_id, style, context)) for style in styles]
+    return simple_user_llm(new_query, [{"role": "system", "content": msg_system}], user_id=user_id, ai_id=ai_id)
 
-    for thread in threads:  thread.start()
-    for thread in threads:  thread.join()
+# def __outfit_reco(query:str, user_id, **kwargs):
+#     styles = __get_styles_from_vdb(query, top_k=20)     # list[dict] :: 벡터DB 에서 스타일 정보 조회
+#     styles = __ask_style_sheet(query, styles)           # list[dict] :: LLM 으로 스타일양식 정리
+#
+#     context = []
+#     threads = [threading.Thread(target=__style_thread, args=(user_id, style, context)) for style in styles]
+#
+#     for thread in threads:  thread.start()
+#     for thread in threads:  thread.join()
+#
+#     # 검색결과를 html 로 만들어서 반환.
+#     return __ask_look_list(query, context)
+def __outfit_reco(query:str, user_id, ai_id, **kwargs):
+    styles = __get_styles_from_vdb(query, top_k=20)   # list[dict] :: 벡터DB 에서 스타일 정보 조회
+    return __ask_style_sheet2(query, styles, user_id, ai_id)          # html :: LLM 으로 스타일양식 정리
 
-    # 검색결과를 html 로 만들어서 반환.
-    return __ask_look_list(query, context)
 def __cert_verify(query:str, **kwargs):
     msg_system = prompt_cert_verify.format()
 
@@ -367,7 +467,7 @@ def __distinguish(query:str):
     context = "\n".join([f"| {catg} | {info['description']} |" for catg,info in INTENTS.items()])
     message = prompt_intent_routing.format(context=context, query=query)
 
-    return simple_user_llm(message)
+    return simple_user_llm(message, model="gpt-5-mini-2025-08-07")
 
 
 #################################################### Intent Routing 파라미터 예시
@@ -401,13 +501,16 @@ BODY_EXAMPLE:dict = Body(None, examples=[{
 ####################################################
 @router.post("/ask")
 def api_ask(param:dict = Body(None, examples=[{
-        "query": "폴리에스터는 왜 재활용하는거야?",
-        "user_id": 1
+        "query"   : "폴리에스터는 왜 재활용하는거야?",
+        "user_id" : 1,
+        "ai_id"   : 1
     }])):
-    query   = param["query"]
+    query   = param.get("query")
     user_id = param.get("user_id")
+    ai_id   = param.get("ai_id")
 
-    intent  = __distinguish(query)                  # 질의를 사전에 정해놓은 분류대로 나누기
-    process = INTENTS[intent]["process"]            # 수행할 함수 확인
-    result  = process(query, user_id=user_id)       # 분류에 맞게 사용자 질의를 재정의하여 데이터 전달하기
+    intent  = __distinguish(query)                           # 질의를 사전에 정해놓은 분류대로 나누기
+    print(f"{intent=}")
+    process = INTENTS[intent]["process"]                    # 수행할 함수 확인
+    result  = process(query, user_id=user_id, ai_id=ai_id)  # 분류에 맞게 사용자 질의를 재정의하여 데이터 전달하기
     return HTMLResponse(content=result, status_code=200)
