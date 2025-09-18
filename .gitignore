@@ -398,5 +398,6 @@ $RECYCLE.BIN/
 .wav
 *.csv
 *.txt
+*.json
 
 style_rules/transcripts_output/*.txt
