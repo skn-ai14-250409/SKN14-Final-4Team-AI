@@ -396,3 +396,8 @@ $RECYCLE.BIN/
 
 .m4a
 .wav
+*.csv
+*.txt
+
+style_rules/transcripts_output/*.txt
+style_rules/transcripts_output/*.txt
