@@ -23,5 +23,3 @@ colorlog
 # 타입 힌트
 typing-extensions
 
-# p 태그만 tts로
-beautifulsoup4>=4.12
