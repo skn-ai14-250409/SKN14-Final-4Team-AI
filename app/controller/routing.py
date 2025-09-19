@@ -336,8 +336,10 @@ def __outfit_reco(query:str, user_id, **kwargs):
     return __ask_look_list(query, context)
 def __cert_verify(query:str, **kwargs):
     msg_system = prompt_cert_verify.format()
-
-    return simple_user_llm(query, [{"role": "system", "content": msg_system}])
+    result_txt = simple_user_llm(query, [{"role": "system", "content": msg_system}])
+    tts_maker = RunpodTTSClient()
+    tts = tts_maker.run_tts(text=result_txt, persona="2")
+    return f"{result_txt}<br><audio src='{tts['s3_url']}'></audio>"
 def __fallback(query:str, **kwargs):
     msg_system  = prompt_fallback.format()
 
