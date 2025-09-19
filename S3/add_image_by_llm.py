@@ -7,6 +7,9 @@ from PIL import Image
 from openai import OpenAI
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
+import time
+
+start_time = time.time()
 
 load_dotenv()
 
@@ -33,7 +36,7 @@ MAX_REFS      = _env_int("TRYON_MAX_REFS", 12)        # 참조 이미지 최대 
 SIZE          = (SIZE_W, SIZE_H)
 
 # ======== 경로/모델 설정 ========
-LOOKS_JSON = Path(os.getenv("LOOKS_JSON_PATH", "beanstalkTest\\S3\\app_product_test.json"))
+LOOKS_JSON = Path(os.getenv("LOOKS_JSON_PATH", "S3\\app_product_test.json"))
 # OUT_DIR    = Path(os.getenv("TRYON_OUT_DIR", "out/tryon_openai")) #로컬에도 이미지 생성
 MODEL_NAME = os.getenv("TRYON_MODEL_NAME", "gpt-image-1")
 
@@ -330,6 +333,8 @@ def main():
                 print(f"[OK] look#{idx} ({look_id}) → S3: s3://{res['bucket']}/{res['key']}\n      URL: {res.get('url')}")
         except Exception as e:
             print(f"[WARN] look#{idx} ({look_id}) S3 업로드 실패(로컬 저장 완료): {e}")
+        end_time = time.time()
+        print(f"소요시간: {(end_time - start_time):.2f} 초")
 
 if __name__ == "__main__":
     main()
