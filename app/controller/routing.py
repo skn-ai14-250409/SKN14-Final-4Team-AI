@@ -2,7 +2,10 @@ import json
 import os
 import threading
 import uuid
+import html as _html
 from typing import Literal
+from bs4 import BeautifulSoup
+
 
 from fastapi import APIRouter, Body
 from fastapi.responses import HTMLResponse
@@ -12,38 +15,10 @@ from sqlalchemy import text
 from S3.add_image_by_llm import build_prompt, generate_model_wearing_refs, S3Uploader
 from app import models
 from app.database import SessionLocal
+from app.clients.runpod_api import RunpodTTSClient
 
 #################################################### FastAPI api Routing
 router = APIRouter(prefix="/api", tags=["API"], responses={404: {"description": "Not found"}} )
-
-#################################################### Intent Routing 파라미터 예시
-BODY_EXAMPLE:dict = Body(None, examples=[{
-        "explain" : "소재 관련 질문 예시( material_explain )",
-        "query": "폴리에스터는 왜 재활용하는거야?",
-        "user_id": 1
-    },
-    {
-        "explain" : "의류 제품 관련 질문 예시( product_find )",
-        "query": "재활용소재로 만든 옷들은 뭐가 있어?",
-        "user_id": 1
-    },
-    {
-        "explain" : "스타일링 관련 질문 예시( outfit_reco )",
-        "query": "날씨가 슬슬 선선해지는데, 어떤 옷을 입을까?",
-        "user_id": 1
-    },
-    {
-        "explain" : "친환경인증 관련 질문 예시( cert_verify )",
-        "query": "RCS 인증마크는 뭐하는 녀석이야?",
-        "user_id": 1
-    },
-    {
-        "explain" : "기타 fallback 예시( fallback )",
-        "query": "날씨가 슬슬 선선해지는데, 감기에 좋은 음식이 뭐야?",
-        "user_id": 1
-    }]
-)
-
 
 #################################################### 전역 변수 선언
 from langchain_core.prompts import PromptTemplate
@@ -56,6 +31,34 @@ pinecone        = Pinecone(os.getenv("PINECONE_API_KEY"))
 index_product   = pinecone.Index(os.getenv("PINECONE_INDEX_PRODUCT"))
 index_style     = pinecone.Index(os.getenv("PINECONE_INDEX_NAME"))
 
+tts_client = None
+try:
+    tts_client = RunpodTTSClient()
+except Exception as e:
+    tts_client = None
+
+def extract_tts_text(maybe_html: str, first_only: bool = False) -> str:
+    """
+    HTML에서 <p> 텍스트만 추출해서 반환
+    HTML이 아니면 원문 반환
+    """
+    if not isinstance(maybe_html, str):
+        return str(maybe_html)
+    
+    if "<" not in maybe_html or ">" not in maybe_html:
+        return maybe_html
+    soup = BeautifulSoup(maybe_html, "html.parser")
+
+    p_nodes = soup.find_all("p")
+    if p_nodes:
+        if first_only:
+            text = p_nodes[0].get_text(" ", strip=True)
+        else:
+            text = "\n\n".join(p.get_text(" ", strip=True) for p in p_nodes)
+    else:
+        text = soup.get_text(" ", strip=True)
+
+    return _html.unescape(text)
 
 #################################################### 기능별 프롬프트 선언
 prompt_intent_routing    = PromptTemplate.from_template("""
@@ -229,7 +232,6 @@ def __get_products_from_vdb(query:str, top_k=3, filter=None):
             "url"         : meta.get("url"),
             "saved_water" : __parse_water_saved(json.loads(meta.get("water_saved_l"))),
             "saved_co2"   : __parse_co2_saved(json.loads(meta.get("co2_saved_kg"))),
-            "url"         : meta.get("url"),
             "spec"        : meta.get("spec"),
         })
     return products
@@ -278,7 +280,7 @@ def __ask_image_composition(look_style, image_urls):
             presign_expire=0
         )
         s3_key = uploader.build_key(out_name, str(_uuid))
-        png_bytes = generate_model_wearing_refs(image_urls, prompt, size=(512,512))
+        png_bytes = generate_model_wearing_refs(image_urls, prompt)
         res = uploader.put_bytes(png_bytes, s3_key, content_type="image/png")
         return res.get('url')
     except Exception as e:
@@ -400,22 +402,61 @@ def __distinguish(query:str):
     return simple_user_llm(message)
 
 
+#################################################### Intent Routing 파라미터 예시
+BODY_EXAMPLE:dict = Body(None, examples=[{
+        "explain" : "소재 관련 질문 예시( material_explain )",
+        "query": "폴리에스터는 왜 재활용하는거야?",
+        "user_id": 1
+    },
+    {
+        "explain" : "의류 제품 관련 질문 예시( product_find )",
+        "query": "재활용소재로 만든 옷들은 뭐가 있어?",
+        "user_id": 1
+    },
+    {
+        "explain" : "스타일링 관련 질문 예시( outfit_reco )",
+        "query": "날씨가 슬슬 선선해지는데, 어떤 옷을 입을까?",
+        "user_id": 1
+    },
+    {
+        "explain" : "친환경인증 관련 질문 예시( cert_verify )",
+        "query": "RCS 인증마크는 뭐하는 녀석이야?",
+        "user_id": 1
+    },
+    {
+        "explain" : "기타 fallback 예시( fallback )",
+        "query": "날씨가 슬슬 선선해지는데, 감기에 좋은 음식이 뭐야?",
+        "user_id": 1
+    }]
+)
+
 ####################################################
 @router.post("/ask")
-def api_ask(param:dict = BODY_EXAMPLE):
+def api_ask(param:dict = Body(None, examples=[{
+        "query": "폴리에스터는 왜 재활용하는거야?",
+        "user_id": 1,
+        "persona":"2"
+    }])):
     query   = param["query"]
     user_id = param.get("user_id")
+    persona = param.get("persona")
 
-    intent  = __distinguish(query)                  # 1 질의를 사전에 정해놓은 분류대로 나누기
-    process = INTENTS[intent]["process"]
-    result  = process(query, user_id=user_id)       # 2 분류에 맞게 사용자 질의를 재정의하여 데이터 전달하기
+    intent  = __distinguish(query)                  # 질의를 사전에 정해놓은 분류대로 나누기
+    process = INTENTS[intent]["process"]            # 수행할 함수 확인
+    result  = process(query, user_id=user_id)       # 분류에 맞게 사용자 질의를 재정의하여 데이터 전달하기
+    
+    tts_url    = None
+    tts_status = None
+    if persona and tts_client:
+        try:
+            tts_text   = extract_tts_text(result, first_only=False)            # result에서 p 태그만 추출 
+            rp         = tts_client.run_tts(text=result, persona=str(persona)) # Runpod runsync 호출
+            tts_url    = rp.get("url")                                         # 클라이언트가 응답 dict에서 첫번째 url 찾아 필드 읽기
+            tts_status = rp.get("status")                                      # tts 처리 상태
+        except Exception as e:
+            tts_status = f"ERROR: {e}"
 
-    ############################################# 3 각 흐름에 맞게 동작 후, 분류에 따라 결과 반환하기
-    # return {
-    #     "intent": intent,
-    #     "result": result
-    # }
+    html = result
+    if tts_url:
+        html += f'<br><br><audio controls src="{tts_url}"></audio>'
     return HTMLResponse(content=result, status_code=200)
-    # return result
-
-

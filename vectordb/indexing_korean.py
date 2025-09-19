@@ -223,7 +223,7 @@ def ingest_files(file_paths, *, namespace=NAMESPACE, add_snippet=True):
 
 # transcripts_output 폴더의 모든 개별 텍스트 파일들을 동적으로 찾기
 import glob
-transcripts_dir = "../style_rules/transcripts_output"
+transcripts_dir = "./style_rules/transcripts_output/txt"
 transcript_files_with_path = []
 
 # 개별 자막 파일들만 찾기 (숫자로 시작하는 파일들)
