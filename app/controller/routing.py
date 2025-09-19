@@ -4,8 +4,6 @@ import threading
 import uuid
 import html as _html
 from typing import Literal
-from bs4 import BeautifulSoup
-
 
 from fastapi import APIRouter, Body
 from fastapi.responses import HTMLResponse
