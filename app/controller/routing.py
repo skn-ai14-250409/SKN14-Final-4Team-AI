@@ -1,21 +1,17 @@
-import html
 import json
 import os
-import re
 import threading
 import uuid
-from pprint import pprint
 from typing import Literal
 
 from fastapi import APIRouter, Body
 from fastapi.responses import HTMLResponse
 from pinecone import Pinecone
-from sqlalchemy import text, select
+from sqlalchemy import text
 
 from S3.add_image_by_llm import build_prompt, generate_model_wearing_refs, S3Uploader
 from app import models
 from app.database import SessionLocal
-from app.models import SearchHistory
 
 #################################################### FastAPI api Routing
 router = APIRouter(prefix="/api", tags=["API"], responses={404: {"description": "Not found"}} )
@@ -572,8 +568,11 @@ def __outfit_reco(query:str, user_id, ai_id, **kwargs):
     return __ask_style_sheet2(query, styles, user_id, ai_id)          # html :: LLM 으로 스타일양식 정리
 def __cert_verify(query:str, **kwargs):
     msg_system = prompt_cert_verify.format()
+    result_txt = simple_user_llm(query, [{"role": "system", "content": msg_system}])
+    tts_maker = RunpodTTSClient()
+    tts = tts_maker.run_tts(text=result_txt, persona="2")
+    return f"{result_txt}<br><audio src='{tts['s3_url']}'></audio>"
 
-    return simple_user_llm(query, [{"role": "system", "content": msg_system}])
 def __show_compose(query:str, user_id, ai_id, **kwargs):
     msg_system = prompt_show_compose.format()
     style_ids  = simple_user_llm(query, [{"role": "system", "content": msg_system}], user_id=user_id, ai_id=ai_id)
@@ -668,6 +667,3 @@ def api_ask(param:dict = Body(None, examples=[{
     process = INTENTS[intent]["process"]                    # 수행할 함수 확인
     result  = process(query, user_id=user_id, ai_id=ai_id)  # 분류에 맞게 사용자 질의를 재정의하여 데이터 전달하기
     return HTMLResponse(content=result, status_code=200)
-
-if __name__ == "__main__":
-    __ask_image_composition("스포티 어반", ["https://patagonia.edge.naverncp.com/image/goods/Q5/49521_SBDY.jpg", "https://patagonia.edge.naverncp.com/image/goods/Q5/49521_SBDY.jpg"])
