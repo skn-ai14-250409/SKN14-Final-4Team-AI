@@ -28,7 +28,6 @@ class SimpleChatLLM:
             chat_log = self.load_chat_history(user_id, ai_id)
             history = chat_log + history
 
-        print(f"{history[-2:]=}")
         resp = self.client.chat.completions.create(
             model=self._model if model is None else model,
             messages=history,
@@ -41,7 +40,7 @@ class SimpleChatLLM:
         text = re.sub(r"  +", " ", text)
         text = html.escape(text, quote=True)
         return text
-    def load_chat_history(self, user_id, ai_id):
+    def load_chat_history(self, user_id, ai_id, top_k=20):
         roles = {
             "ai"    : "assistant",
             "user"  : "user",
@@ -53,8 +52,8 @@ class SimpleChatLLM:
                        "WHERE  user_id       = :user_id"
                        "   AND influencer_id = :ai_id "
                        "ORDER BY talked_at DESC "
-                       "LIMIT 20 OFFSET 1" )
-            result = db.execute(text(_query), {"user_id":user_id, "ai_id":ai_id})
+                       "LIMIT :limit OFFSET 1" )
+            result = db.execute(text(_query), {"user_id":user_id, "ai_id":ai_id, "limit":top_k})
             rows   = result.fetchall()
             history = [ {"role":roles[row[0]], "content":self.__refine(row[1])} for row in rows ]
             return history[::-1]

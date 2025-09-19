@@ -14,6 +14,14 @@ class SearchHistory(Base):
     look_desc    = Column(Text, nullable=True)
     searched_at  = Column(DateTime(timezone=True), server_default=func.now())
 
+class SearchHistoryProduct(Base):
+    __tablename__ = "search_history_product"
+
+    id           = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    product_id   = Column(Integer)
+    search_id    = Column(Integer)
+
+
 
 class ChatHistory(Base):
     __tablename__ = "apiapp_chathistory"
