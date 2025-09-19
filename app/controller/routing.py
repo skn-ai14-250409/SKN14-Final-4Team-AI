@@ -2,7 +2,10 @@ import json
 import os
 import threading
 import uuid
+import html as _html
 from typing import Literal
+from bs4 import BeautifulSoup
+
 
 from fastapi import APIRouter, Body
 from fastapi.responses import HTMLResponse
@@ -12,6 +15,7 @@ from sqlalchemy import text
 from S3.add_image_by_llm import build_prompt, generate_model_wearing_refs, S3Uploader
 from app import models
 from app.database import SessionLocal
+from app.clients.runpod_api import RunpodTTSClient
 
 #################################################### FastAPI api Routing
 router = APIRouter(prefix="/api", tags=["API"], responses={404: {"description": "Not found"}} )
@@ -27,6 +31,34 @@ pinecone        = Pinecone(os.getenv("PINECONE_API_KEY"))
 index_product   = pinecone.Index(os.getenv("PINECONE_INDEX_PRODUCT"))
 index_style     = pinecone.Index(os.getenv("PINECONE_INDEX_NAME"))
 
+tts_client = None
+try:
+    tts_client = RunpodTTSClient()
+except Exception as e:
+    tts_client = None
+
+def extract_tts_text(maybe_html: str, first_only: bool = False) -> str:
+    """
+    HTML에서 <p> 텍스트만 추출해서 반환
+    HTML이 아니면 원문 반환
+    """
+    if not isinstance(maybe_html, str):
+        return str(maybe_html)
+    
+    if "<" not in maybe_html or ">" not in maybe_html:
+        return maybe_html
+    soup = BeautifulSoup(maybe_html, "html.parser")
+
+    p_nodes = soup.find_all("p")
+    if p_nodes:
+        if first_only:
+            text = p_nodes[0].get_text(" ", strip=True)
+        else:
+            text = "\n\n".join(p.get_text(" ", strip=True) for p in p_nodes)
+    else:
+        text = soup.get_text(" ", strip=True)
+
+    return _html.unescape(text)
 
 #################################################### 기능별 프롬프트 선언
 prompt_intent_routing    = PromptTemplate.from_template("""
@@ -402,12 +434,29 @@ BODY_EXAMPLE:dict = Body(None, examples=[{
 @router.post("/ask")
 def api_ask(param:dict = Body(None, examples=[{
         "query": "폴리에스터는 왜 재활용하는거야?",
-        "user_id": 1
+        "user_id": 1,
+        "persona":"2"
     }])):
     query   = param["query"]
     user_id = param.get("user_id")
+    persona = param.get("persona")
 
     intent  = __distinguish(query)                  # 질의를 사전에 정해놓은 분류대로 나누기
     process = INTENTS[intent]["process"]            # 수행할 함수 확인
     result  = process(query, user_id=user_id)       # 분류에 맞게 사용자 질의를 재정의하여 데이터 전달하기
+    
+    tts_url    = None
+    tts_status = None
+    if persona and tts_client:
+        try:
+            tts_text   = extract_tts_text(result, first_only=False)            # result에서 p 태그만 추출 
+            rp         = tts_client.run_tts(text=result, persona=str(persona)) # Runpod runsync 호출
+            tts_url    = rp.get("url")                                         # 클라이언트가 응답 dict에서 첫번째 url 찾아 필드 읽기
+            tts_status = rp.get("status")                                      # tts 처리 상태
+        except Exception as e:
+            tts_status = f"ERROR: {e}"
+
+    html = result
+    if tts_url:
+        html += f'<br><br><audio controls src="{tts_url}"></audio>'
     return HTMLResponse(content=result, status_code=200)
