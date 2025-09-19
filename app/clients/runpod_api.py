@@ -1,46 +1,49 @@
 from __future__ import annotations
-import os, re, json, time
+import os, requests
+
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, List
-import requests
+from typing import Any, Dict, Optional
+from openai import OpenAI
 
-# 응답에 있는 URL 형태 찾기위한 정규식
-_URL_RE = re.compile(r"https?://[^\s\"'<>]+", re.IGNORECASE)
+_llm_client = OpenAI()
+_CHAT_MODEL = os.getenv("CHAT_MODEL", "gpt-4o-mini")
 
-
-def _extract_first_url(obj: Any) -> Optional[str]:
+def summarize_p_text_via_llm(html_str: str) -> str:
     """
-    RunPod 응답의 output/logs 어디에 URL이 와도 최대한 찾아서 반환.
-    - dict면 흔한 키(s3_url/audio_url/url/file_url) 우선 확인 → 없으면 값들을 재귀적으로 탐색
-    - list/tuple이면 각 원소를 재귀적으로 탐색
-    - str이면 정규식으로 URL 패턴을 추출
-    - 아무것도 없으면 None
+    HTML을 LLM에 그대로 보내서:
+    1) 내부 텍스트만 추출
+    2) 한국어 50~100자 요약
     """
-    # 1) 딕셔너리: 보편적인 키 먼저 체크
-    if isinstance(obj, dict):
-        for k in ("s3_url", "audio_url", "url", "file_url"):
-            if k in obj and isinstance(obj[k], str) and obj[k].startswith("http"):
-                return obj[k]
-        # 값들 안쪽도 검사
-        for v in obj.values():
-            found = _extract_first_url(v)
-            if found:
-                return found
+    if not isinstance(html_str, str) or not html_str.strip():
+        return ""
 
-    # 2) 리스트/튜플: 각 원소 재귀
-    if isinstance(obj, (list, tuple)):
-        for item in obj:
-            found = _extract_first_url(item)
-            if found:
-                return found
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "너는 HTML 문서에서 본문을 요약하는 도우미야. "
+                "반드시 다음 순서를 지켜:\n"
+                "1) 제공된 HTML에서 내부 텍스트만 순서대로 추출해.\n"
+                "2) 그 텍스트만 기반으로 한국어로 50~100자 사이로 간결하게 요약해.\n"
+                "3) HTML/마크업/따옴표/접두사 없이 순수 문장만 출력해.\n"
+            )
+        },
+        {
+            "role": "user",
+            "content": (
+                "다음은 HTML이야. 위 지침을 따라서 출력해:\n\n"
+                f"{html_str}"
+            )
+        }
+    ]
 
-    # 3) 문자열: 정규식으로 URL 추출
-    if isinstance(obj, str):
-        m = _URL_RE.search(obj)
-        if m:
-            return m.group(0)
-
-    return None
+    resp = _llm_client.chat.completions.create(
+        model=_CHAT_MODEL,
+        messages=messages,
+        temperature=0.2,
+        max_tokens=150,
+    )
+    return (resp.choices[0].message.content or "").strip()
 
 
 @dataclass
@@ -57,6 +60,11 @@ class RunpodConfig:
     base_url   : str = "https://api.runpod.ai/v2"
     timeout_sec: int = 120  # runsync는 완료까지 기다리므로 적당히 넉넉히
 
+def _prefer_s3_url(data:dict) -> Optional[str]:
+    try:
+        return data["output"]["output"]["s3_url"]
+    except Exception:
+        return None
 
 class RunpodTTSClient:
     """
@@ -100,15 +108,29 @@ class RunpodTTSClient:
         except Exception:
             raise RuntimeError(f"RunPod runsync 응답이 JSON이 아닙니다: {resp.text[:500]}")
 
-        status = data.get("status")
-        if status not in ("COMPLETED", "IN_QUEUE", "IN_PROGRESS"):  # 드물게 변형된 상태값 대비
-            # 그래도 output이 있을 수 있으니 URL을 먼저 시도
-            pass
+        status  = data.get("status")
+        s3_url  = _prefer_s3_url(data)
+        return {"raw": data, "status": status, "s3_url":s3_url}
+    
+    def run_tts_from_html(self, *, html:str, persona:str) -> Dict[str, Any]:
+        summarized = summarize_p_text_via_llm(html)
+        return self.run_tts(text=summarized, persona=persona)
 
-        # 결과 URL 추출 시도
-        url_out = _extract_first_url(data.get("output")) or _extract_first_url(data)
-        return {
-            "raw": data,
-            "status": status,
-            "url": url_out,
-        }
+
+# def build_autoplay_audio_tag(src_url: str) -> str:
+#     """
+#     브라우저 자동재생 정책을 고려해 autoplay/playsinline + JS 보조 시도
+#     """
+#     return (
+#         f'<audio id="ttsAudio" controls autoplay preload="auto" playsinline src="{src_url}"></audio>'
+#         "<script>"
+#         "  (function(){"
+#         "    var a=document.getElementById('ttsAudio');"
+#         "    if(a){"
+#         "      var play=()=>a.play().catch(()=>{});"
+#         "      if(document.readyState==='complete'){play();}"
+#         "      else {window.addEventListener('load', play, {once:true});}"
+#         "    }"
+#         "  })();"
+#         "</script>"
+#     )
