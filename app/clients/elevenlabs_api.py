@@ -54,7 +54,6 @@ class S3Config:
     region       : str = os.getenv("AWS_S3_REGION", "ap-northeast-2")
     prefix       : str = os.getenv("AWS_S3_PREFIX", "model_tts")
     public_read : bool = (os.getenv("AWS_S3_PUBLIC_READ", "1").lower() in ("1","true","yes"))
-    presign_exp : int = int(os.getenv("AWS_S3_PRESIGN_EXPIRE", "0"))
 
 class S3Uploader:
     def __init__(self, cfg: S3Config):
@@ -69,17 +68,7 @@ class S3Uploader:
         extra = {"ContentType": content_type}
         self.s3.put_object(Bucket=self.cfg.bucket, Key=key, Body=data, **extra)
 
-        if self.cfg.presign_exp > 0:
-            url = self.s3.generate_presigned_url(
-                "get_object",
-                Params={"Bucket": self.cfg.bucket, "Key": key},
-                ExpiresIn=self.cfg.presign_exp,
-            )
-        elif self.cfg.public_read:
-            url = f"https://{self.cfg.bucket}.s3.{self.cfg.region}.amazonaws.com/{key}"
-        else:
-            # 퍼블릭 아님 & presign 안 쓰면 버킷 정책에 따름 (필요시 presign 사용 권장)
-            url = f"s3://{self.cfg.bucket}/{key}"
+        url   = f"https://{self.cfg.bucket}.s3.{self.cfg.region}.amazonaws.com/{key}"
         return {"url": url, "key": key}
 
 
