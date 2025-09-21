@@ -8,7 +8,7 @@ class SearchHistory(Base):
     __tablename__ = "search_history"
 
     id           = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_Id      = Column(Integer)
+    user_id      = Column(Integer)
     look_style   = Column(String)
     look_img_url = Column(String, nullable=True)
     look_desc    = Column(Text, nullable=True)
@@ -35,3 +35,10 @@ class ChatHistory(Base):
     voice_url     = Column(String, nullable=True)
     talked_at     = Column(DateTime(timezone=True), server_default=func.now())
 
+class Like(Base):
+    __tablename__ = "mainapp_like"
+
+    id        = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id   = Column(Integer)
+    search_id = Column(Integer)
+    liked_at  = Column(DateTime(timezone=True), server_default=func.now())

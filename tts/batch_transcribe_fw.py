@@ -1,5 +1,6 @@
-from faster_whisper import WhisperModel
 from pathlib import Path
+
+from faster_whisper import WhisperModel
 
 AUDIO_DIR = Path("dataset/chunks")
 OUT_DIR = Path("dataset/transcripts"); OUT_DIR.mkdir(exist_ok=True)
@@ -20,7 +21,7 @@ for wav in sorted(AUDIO_DIR.glob("*.wav")):
         )
         text = " ".join(seg.text.strip() for seg in segments).strip()
         (OUT_DIR / f"{wav.stem}.txt").write_text(text, encoding="utf-8")
-        print("OK:", wav.name)
+        # print("OK:", wav.name)
     except Exception as e:
         print("FAIL:", wav.name, "-", e)
 

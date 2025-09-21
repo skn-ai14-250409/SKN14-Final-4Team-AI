@@ -1,5 +1,4 @@
 import html
-import json
 import re
 
 from openai import OpenAI
@@ -19,8 +18,7 @@ class SimpleChatLLM:
         self._client = client if client else SimpleChatLLM.client
         self._model  = model
 
-
-    def __call__(self, message:str, history:list[dict] = None, model=None, user_id=None, ai_id=None, *args, **kwargs):
+    def __call__(self, message:str, history:list[dict] = None, model=None, user_id=None, ai_id=None, **kwargs):
         history = history or []
         history.append({"role": "user", "content": message})
 
@@ -49,11 +47,13 @@ class SimpleChatLLM:
         with SessionLocal() as db:
             _query = ( "SELECT talker_type, style_text "
                        "FROM   apiapp_chathistory "
-                       "WHERE  user_id       = :user_id"
-                       "   AND influencer_id = :ai_id "
+                       "WHERE  user_id = :user_id AND influencer_id = :ai_id "
                        "ORDER BY talked_at DESC "
                        "LIMIT :limit OFFSET 1" )
+            # print(_query)
             result = db.execute(text(_query), {"user_id":user_id, "ai_id":ai_id, "limit":top_k})
             rows   = result.fetchall()
+            # print(f"{len(rows)=}")
             history = [ {"role":roles[row[0]], "content":self.__refine(row[1])} for row in rows ]
+            # print(f"{len(history)} history searched")
             return history[::-1]

@@ -23,3 +23,5 @@ colorlog
 # 타입 힌트
 typing-extensions
 
+# 개발환경 DB 연결 비동기
+aiosqlite

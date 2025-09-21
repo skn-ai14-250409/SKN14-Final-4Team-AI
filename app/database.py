@@ -2,7 +2,6 @@ import os
 
 from dotenv import load_dotenv
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.asyncio import AsyncSession
 
 load_dotenv()
 from sqlalchemy import create_engine
@@ -37,8 +36,8 @@ is_local  = os.getenv("WORKING_ENV", "prod") == "local"
 if is_local:  engine = _when_local_env()
 else:         engine = _when_prod_env()
 
-SessionLocal      = sessionmaker(engine, autoflush=False, autocommit=False, future=True)
-AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+SessionLocal      = sessionmaker(engine, autoflush=False, autocommit=False, future=True, expire_on_commit=False)
+# AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 Base = declarative_base()
 
@@ -49,9 +48,9 @@ def get_db():
     finally:
         db.close()
 
-async def get_async_db():
-    db = AsyncSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# async def get_async_db():
+#     db = AsyncSessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
