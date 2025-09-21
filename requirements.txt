@@ -1,20 +1,27 @@
-fastapi
-uvicorn[standard]
-sqlalchemy>=2.0
-pymysql>=1.1
-python-dotenv>=1.0
-pandas>=2.2
-
-openai>=1.35
-pinecone
+# 핵심 의존성
+pinecone-client
+sentence-transformers
+python-dotenv
 langchain
 langchain-openai
+langchain-core
 
-pydantic>=2.9
+# 데이터 처리
+pandas
+numpy
 
-requests>=2.32
+# 테스트
+pytest
+pytest-mock
 
-mysql-connector-python>=9.0
+# 진행률 표시
+tqdm
 
-pillow
-boto3
+# 로깅
+colorlog
+
+# 타입 힌트
+typing-extensions
+
+# 개발환경 DB 연결 비동기
+aiosqlite
