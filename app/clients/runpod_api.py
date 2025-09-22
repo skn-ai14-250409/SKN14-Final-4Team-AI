@@ -3,7 +3,11 @@ import os, requests
 
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
+
+from dotenv import load_dotenv
 from openai import OpenAI
+
+load_dotenv()
 
 _llm_client = OpenAI()
 _CHAT_MODEL = os.getenv("CHAT_MODEL", "gpt-4o-mini")
