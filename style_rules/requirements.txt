@@ -1,4 +1,0 @@
-youtube-transcript-api
-pandas
-rapidfuzz
-python-dateutil
