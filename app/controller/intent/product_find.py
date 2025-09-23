@@ -198,18 +198,17 @@ class ProductFind(IntentBase):
         return "".join(styles_html)
 
     def __prod_to_html(self, info:dict):
-        return """
-<div class="product-card" data-id="{id}" data-url="{url}">
-    <a href="{url}" target="_blank">
-        <div class="product-image" style="background-image: url('{image}');"></div>
-        <div class="product-info">
-            <div class="product-title">{name}</div>
-            <div class="product-description">{price}</div>
-        </div>
-        <div class="button-box">
-            <button class="cert-button">인증정보</button>
-            <button class="comp-button">착샷</button>
-        </div>
-    </a>
-</div>
-""".format(**info)
+        return ("<div class='product-card' data-id='{id}' data-url='{url}'>"
+                "    <a href='{url}' target='_blank'>"
+                "       <div class='product-image' style='background-image: url('{image}');'></div>"
+                "        <div class='product-info'>"
+                "            <div class='product-title'>{name}</div>"
+                "            <div class='product-description'>{price}</div>"
+                "        </div>"
+                "        <div class='button-box'>"
+                "            <button class='cert-button'>인증정보</button>"
+                "            <button class='comp-button'>착샷</button>"
+                "        </div>"
+                "    </a>"
+                "</div>"
+        ).format(**info)

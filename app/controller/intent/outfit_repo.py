@@ -24,7 +24,7 @@ class OutfitReco(IntentBase):
     def __call__(self, **kwargs):
         query       = kwargs['query']
         with_voice  = kwargs.get('with_voice', False)
-        persona     = kwargs.get('persona', 1)
+        persona     = kwargs.get('ai_id', 1)
 
         styles  = self.get_styles_from_vdb(query, top_k=20)           # list[dict] :: 벡터DB 에서 스타일 정보 조회
         result  = self.__ask_style_sheet2(styles=styles, **kwargs)    # list[dict]

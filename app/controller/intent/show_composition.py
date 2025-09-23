@@ -218,7 +218,7 @@ class ShowComposition(IntentBase):
         return f"""<div class="product-container">{styles_html}</div>"""
 
     def __prod_to_html(self, info:dict):
-        return ("<div class='product-card' data-id='{id}' data-url='{url}'>"
+        return ("<div class='product-card' data-id='{id}'>"
                 "    <a href='{url}' target='_blank'>"
                 "        <div class='product-image' style='background-image: url('{image}');'></div>"
                 "        <div class='heart-icon {like}'>🤍</div>"
