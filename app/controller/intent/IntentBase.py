@@ -7,6 +7,8 @@ from langchain_core.prompts import PromptTemplate
 from langchain_openai import OpenAIEmbeddings
 from pinecone import Pinecone
 
+from app.clients.elevenlabs_api import ElevenLabsTTSClient
+from app.clients.influencer import Influencer
 from app.clients.runpod_api import RunpodTTSClient
 from app.simple_llm import SimpleChatLLM
 
@@ -18,7 +20,9 @@ class IntentBase:
     index_product   = pinecone.Index(os.getenv("PINECONE_INDEX_PRODUCT"))
     index_style     = pinecone.Index(os.getenv("PINECONE_INDEX_STYLE"))
     index_style_ns  = os.getenv("PINECONE_INDEX_STYLE_NAMESPACE", "transcripts-kr")
-    tts_maker       = RunpodTTSClient()
+    influencer      = Influencer()
+    # tts_maker       = RunpodTTSClient()
+    tts_maker       = ElevenLabsTTSClient()
 
     def __init__(self, prompt:str=None, **kwargs):
         if prompt:
@@ -29,7 +33,6 @@ class IntentBase:
         user_id    = kwargs.get("user_id")
         ai_id      = kwargs.get("ai_id")
         with_voice = kwargs.get("with_voice", False)
-        persona    = kwargs.get("persona", 1)
         # print(f"{kwargs=}")
 
         msg      = prompt  or self._prompt.format()
@@ -37,10 +40,13 @@ class IntentBase:
         history += [{"role": "system", "content": msg}]
 
         result   = IntentBase.simple_user_llm(query, history, model, user_id, ai_id)
+        influencer_say = result
+        if ai_id:
+            influencer_say = IntentBase.influencer(result, ai_id)
 
         if with_voice:
-            voice  = self.get_voice(result, with_voice=with_voice, persona=persona)
-            result += f"<audio controls loop='false' src={voice}></audio>"
+            voice  = self.get_voice(influencer_say, with_voice=with_voice, persona=ai_id)
+            result += f"<audio controls src={voice}></audio>"
 
         return result
 
@@ -106,10 +112,10 @@ class IntentBase:
                 "image"       : meta.get("image_url"),
                 "color"       : meta.get("color"),
                 "color_detail": meta.get("color_detail"),
-                "material"    : self.__parse_merged_material(meta),
-                "url"         : meta.get("url"),
-                "saved_water" : self.__parse_water_saved(json.loads(meta.get("water_saved_l"))),
-                "saved_co2"   : self.__parse_co2_saved(json.loads(meta.get("co2_saved_kg"))),
-                "spec"        : self.__refine(meta.get("spec")),
+                "url": meta.get("url"),
+                # "material"    : self.__parse_merged_material(meta),
+                # "saved_water" : self.__parse_water_saved(json.loads(meta.get("water_saved_l"))),
+                # "saved_co2"   : self.__parse_co2_saved(json.loads(meta.get("co2_saved_kg"))),
+                # "spec"        : self.__refine(meta.get("spec")),
             })
         return products

@@ -1,5 +1,6 @@
 import os
 
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -29,3 +30,7 @@ app.include_router(routing.router)
 @app.get("/health", summary="AWS Health Check 용", response_description="항상 {status:'ok'} 를 200 으로 반환.")
 def health():
     return {"status": "ok"}
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", port=8100, reload=False)
