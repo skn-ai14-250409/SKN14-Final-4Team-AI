@@ -26,6 +26,7 @@ class SimpleChatLLM:
             chat_log = self.load_chat_history(user_id, ai_id)
             history = chat_log + history
 
+
         resp = self.client.chat.completions.create(
             model=self._model if model is None else model,
             messages=history,
@@ -33,10 +34,12 @@ class SimpleChatLLM:
         return resp.choices[0].message.content
 
     def __refine(self, text):
-        text = re.sub(r"<(\w+) [^>]*>", r"<\1>", text)
+        # text = re.sub(r"<(\w+) [^>]*>", r"<\1>", text)
         text = re.sub(r"[\n\r\t]", "", text)
         text = re.sub(r"  +", " ", text)
-        text = html.escape(text, quote=True)
+        text = re.sub("'", "\'", text)
+        text = re.sub("\"", "\\\"", text)
+        # text = html.escape(text, quote=True)
         return text
     def load_chat_history(self, user_id, ai_id, top_k=20):
         roles = {
