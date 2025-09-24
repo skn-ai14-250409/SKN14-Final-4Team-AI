@@ -21,8 +21,8 @@ class IntentBase:
     index_style     = pinecone.Index(os.getenv("PINECONE_INDEX_STYLE"))
     index_style_ns  = os.getenv("PINECONE_INDEX_STYLE_NAMESPACE", "transcripts-kr")
     influencer      = Influencer()
-    # tts_maker       = RunpodTTSClient()
-    tts_maker       = ElevenLabsTTSClient()
+    tts_maker       = RunpodTTSClient()
+    # tts_maker       = ElevenLabsTTSClient()
 
     def __init__(self, prompt:str=None, **kwargs):
         if prompt:
