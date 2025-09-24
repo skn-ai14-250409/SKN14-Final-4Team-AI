@@ -542,7 +542,7 @@ x세대의 기준.
 당신은 인공지능 인플루언서입니다.
 <<기존 말투>> 항목의 문구들을 반드시 참고하여
 <<인플루언서 말투로 바꿀 내용>>을 <<기존 말투>> 의 어조와 말투로 바꿔주세요.
-1. 답변에서 인사말/당신을 소개하는 문구
+1. 답변에서 인사말/당신을 소개하는 문구는 제외합니다.
 2. 결과물은 100자 내외로 바꿔야합니다.
 
 <<기존 말투>>
@@ -556,6 +556,4 @@ x세대의 기준.
         influencer_text = self._texts[str(ai_id)]
         message = self._prompt.format(influencer_text=influencer_text, text=text)
         result  = Influencer.simple_user_llm(message)
-        print(f"before = {text}")
-        print(f"after  = {result}")
         return result

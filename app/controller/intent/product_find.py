@@ -27,6 +27,7 @@ class ProductFind(IntentBase):
 3. <<출력양식>> 에서 상의/하의의 color는 {colors} 중 하나로만 표현해야 합니다. 영어로만 넣어주세요.
 3.1. 해당하는 항목이 없다면 가장 무난한 색상으로 넣어주세요.
 4. <<출력양식>> 에서 상의/하의의 category 는 {categories} 중 하나로만 표현해야 합니다. 영어로만 넣어주세요.
+5. 답변에 인사말/당신을 소개하는 문구/불필요한 미사여구는 제외합니다.
 
 <<출력양식>>
 - 사용자가 이전 대화내역에서 검색했던 스타일이나 제품을 찾고있다고 판단되는 경우
@@ -38,7 +39,7 @@ class ProductFind(IntentBase):
             "name"  : "깔끔하고 심플한 미니멀",
             "desc"  : "패턴 최소화·모노톤 중심, 실루엣 강조, 액세서리 최소",
             "combi" : [
-                {{ "top" : {{ "name" : ""화이트 셔츠", "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)"}}  , "bottom" : {{ "name" : "블랙 슬랙스", "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)" }} }},
+                {{ "top" : {{ "name" : "화이트 셔츠", "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)"}}  , "bottom" : {{ "name" : "블랙 슬랙스", "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)" }} }},
                 {{ "top" : {{ "name" : "솔리드 티셔츠", "color":(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)"}}, "bottom" : {{ "name" : "그레이 와이드 팬츠", "color":(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)" }} }},
                 {{ "top" : {{ "name" : "슬림핏 니트", "color":(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)"}}  , "bottom" : {{ "name" : "H라인 스커트", "color":(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)" }} }},
             ]
@@ -94,59 +95,6 @@ class ProductFind(IntentBase):
         return HTMLResponse(result, status_code=200)
 
 
-
-
-    def __ask_image_composition(self, name, image_urls):
-        prompt = build_prompt(image_urls, name)
-        _uuid  = uuid.uuid1()
-        out_name = f"look_{_uuid}.png"
-        try:
-            s3_key = self.s3_uploader.build_key(out_name, str(_uuid))
-            png_bytes = generate_model_wearing_refs(image_urls, prompt)
-            res = self.s3_uploader.put_bytes(png_bytes, s3_key, content_type="image/png")
-            return res.get('url')
-        except Exception as e:
-            print(e)
-            print(f"[ERROR] {name} 스타일 룩 이미지 생성 실패.\n{', '.join(image_urls)}")
-            return ""
-    def __save_image(self, user_id:int, name:str, desc:str, top:dict, bottom:dict):
-        # async with AsyncSessionLocal() as db:
-        with SessionLocal() as db:
-            _query = (
-                "SELECT search_id FROM search_history_product "
-                "WHERE  product_id = :bottom AND search_id IN ( "
-                "    SELECT search_id FROM search_history_product WHERE product_id = :top"
-                ")"
-            )
-            result = db.execute(text(_query), {"top":top["id"], "bottom":bottom["id"]})
-            row = result.fetchone()
-            if not row:
-                print("\nNo record for style.")
-                look_img_url = self.__ask_image_composition(name, [top["image"], bottom["image"]])
-                row = models.SearchHistory(user_id=user_id, look_style=name, look_desc=desc, look_img_url=look_img_url)
-                db.add(row)
-                db.refresh(row)
-                print(f"look_img_url = {look_img_url}")
-
-                history_product = models.SearchHistoryProduct(product_id=top["id"], search_id=row.id)
-                db.add(history_product)
-                print(f"top product {top['name']} save.")
-                history_product = models.SearchHistoryProduct(product_id=bottom["id"], search_id=row.id)
-                db.add(history_product)
-                print(f"bottom product {bottom['name']} save.")
-
-                db.commit()
-    def __ready_image_save(self, user_id, styles):
-        dbsave   = []
-        for style in styles:
-            for combi in style["combi"]:
-                task = asyncio.create_task(self.__save_image(user_id, style["name"], style["desc"], combi["top"]["info"], combi["bottom"]["info"]))
-                dbsave.append(task)
-        # await asyncio.gather(*dbsave)
-
-    # def __run_async(self, user_id, styles):
-    #     asyncio.run(self.__ready_image_save(user_id, styles))
-
     def _search_product_vdb(self, store, key, q, f):
         products = self.get_products_from_vdb(q, 3, f)
         pick = random.choice(products)
@@ -178,10 +126,6 @@ class ProductFind(IntentBase):
                     threads.append(thread)
 
         for thread in threads:  thread.join()
-        # pprint(styles)
-
-        # background_tasks = BackgroundTasks()
-        # background_tasks.add_task(self.__run_async, user_id, styles)
 
         styles_html = []
         for style in styles:
@@ -190,7 +134,7 @@ class ProductFind(IntentBase):
                 cards_html = ""
                 for catg in ["top", "bottom"]:
                     dress  = combi[catg]            # 해당 스타일 조합의 top 또는 bottom
-                    cards_html += self.__prod_to_html(dress["info"])
+                    cards_html += self.__prod_to_html(dress.get("info"))
 
                 combies_html.append(f"""<div class="product-container">{cards_html}</div>""")
             styles_html.append(f"""<li><div class="text">{style['name']} :: {style['desc']}</div>{'<br/>'.join(combies_html)}</li>""")
@@ -198,17 +142,17 @@ class ProductFind(IntentBase):
         return "".join(styles_html)
 
     def __prod_to_html(self, info:dict):
-        return ("<div class='product-card' data-id='{id}' data-url='{url}'>"
-                "    <a href='{url}' target='_blank'>"
-                "       <div class='product-image' style='background-image: url('{image}');'></div>"
-                "        <div class='product-info'>"
-                "            <div class='product-title'>{name}</div>"
-                "            <div class='product-description'>{price}</div>"
-                "        </div>"
-                "        <div class='button-box'>"
-                "            <button class='cert-button'>인증정보</button>"
-                "            <button class='comp-button'>착샷</button>"
-                "        </div>"
-                "    </a>"
-                "</div>"
-        ).format(**info)
+        try:
+            return """
+<div class='product-card' data-id='{id}' data-label="제품정보">
+    <a href='{url}' target='_blank'>
+       <div class='product-image' style='background-image: url({image});'></div>
+        <div class='product-info'>
+            <div class='product-title'>{name}</div>
+            <div class='product-description'>{price}</div>
+        </div>
+    </a>
+</div>""".format(**info)
+        except Exception as e:
+            print(e, f"ProductFind.__prod_to_html() :: info = {info}")
+            return ""
