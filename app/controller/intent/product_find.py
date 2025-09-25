@@ -1,17 +1,14 @@
-import asyncio
 import json
 import os
 import random
 import threading
-import uuid
 
 from langchain_core.prompts import PromptTemplate
 from sqlalchemy import text
 from starlette.responses import HTMLResponse
 
-from S3.add_image_by_llm import build_prompt, S3Uploader, generate_model_wearing_refs
+from S3.add_image_by_llm import S3Uploader
 from .IntentBase import IntentBase
-from ... import models
 from ...database import SessionLocal
 
 
