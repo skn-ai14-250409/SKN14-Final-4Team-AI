@@ -1,8 +1,8 @@
 import time
 
 from fastapi import APIRouter, Body
-from app.controller.intent.distinguish import Distinguish
 
+from app.controller.intent.distinguish import Distinguish
 
 #################################################### FastAPI api Routing
 router = APIRouter(prefix="/api", tags=["API"], responses={404: {"description": "Not found"}} )
@@ -30,7 +30,7 @@ def api_ask(param:dict = Body(None, examples=[{
 
     start = time.time()
     process = intent["process"]                    # 수행할 함수 확인
-    result  = process(query=query, user_id=user_id, ai_id=ai_id)  # 분류에 맞게 사용자 질의를 재정의하여 데이터 전달하기
+    result  = process(query=query, user_id=user_id, ai_id=ai_id, with_voice=True)  # 분류에 맞게 사용자 질의를 재정의하여 데이터 전달하기
     end = time.time()
     print(f"Process-{process} :: Time spend : {end - start}")
     return result

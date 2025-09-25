@@ -87,6 +87,9 @@ class ShowComposition(IntentBase):
         # Step2 :: 질의에 해당하는 제품을 찾아 결과 반환.
         if type == "related":
             result     = self.search_product(step1_result["styles"], user_id)
+            ment       = self.influencer(json.dumps(step1_result["styles"], ensure_ascii=False), ai_id)
+            voice      = self.get_voice(ment, True, ai_id)
+            result    += f"<audio controls src={voice}></audio>"
         else:
             # products   = self.get_products_from_vdb(new_query)
             # result     = "".join([self.__prod_to_html(prod) for prod in products])
@@ -152,7 +155,7 @@ class ShowComposition(IntentBase):
                     "name" : name,
                     "desc" : desc,
                     "image": row.look_img_url,
-                    "url"  : f"javascript:openStyle({row.id});",
+                    "url"  : f"/detail/{row.id}",
                     "like" : "unliked" if like is None else "liked"
                 }
 
