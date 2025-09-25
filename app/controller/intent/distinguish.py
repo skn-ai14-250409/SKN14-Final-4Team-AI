@@ -18,7 +18,7 @@ class Distinguish(IntentBase):
             },
             "product_find"    : {
                 "description" : "의류/옷/상의/하의/의복/제품",
-                "questions"   : ["여성 재킷 보여줘.", "Ecolabel 인증을 받은 제품을 찾아줘.", "흰 바지에 어울리는 옷을 찾아줘."],
+                "questions"   : ["여성 재킷 보여줘.", "Ecolabel 인증을 받은 제품을 찾아줘.", "흰 바지에 어울리는 옷을 찾아줘.", "우산 스타일 옷 사진 보여줘"],
                 "process"     : ProductFind()
             },
             "outfit_reco"     : {

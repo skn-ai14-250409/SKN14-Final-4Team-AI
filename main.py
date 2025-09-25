@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import FileResponse
 
 # 라우터
 from app.controller import routing
@@ -27,9 +29,16 @@ app.add_middleware(
 # router 등록
 app.include_router(routing.router)
 
+ROBOTS_TXT_PATH = Path("robots.txt")
+
+@app.get("/robots.txt")
+async def get_robots_txt():
+    return FileResponse(ROBOTS_TXT_PATH, media_type="text/plain")
+
 @app.get("/health", summary="AWS Health Check 용", response_description="항상 {status:'ok'} 를 200 으로 반환.")
 def health():
     return {"status": "ok"}
+
 
 
 if __name__ == "__main__":
