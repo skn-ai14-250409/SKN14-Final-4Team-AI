@@ -6,10 +6,12 @@ import re
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import OpenAIEmbeddings
 from pinecone import Pinecone
+from sqlalchemy import select
 
-from app.clients.elevenlabs_api import ElevenLabsTTSClient
 from app.clients.influencer import Influencer
 from app.clients.runpod_api import RunpodTTSClient
+from app.database import SessionLocal
+from app.models import Member
 from app.simple_llm import SimpleChatLLM
 
 
@@ -60,7 +62,18 @@ class IntentBase:
         return voice
 
 
-    def get_styles_from_vdb(self, query:str, top_k=10) -> list[dict]:
+    def get_styles_from_vdb(self, query:str, top_k=10, user_id=None) -> list[dict]:
+        if user_id:
+            with SessionLocal() as db:
+                stmt = select(Member).where(Member.user_id == user_id)
+                user = db.execute(stmt).scalar_one_or_none()
+                if user:
+                    gender   = "남성" if user.gender == "M" else "여성" if user.gender == "F" else ""
+                    gender  += "의류, " if gender else ""
+                    prefer   = f"{user.prefer} 스타일, " if user.prefer else ""
+                    material = f"{user.prefer_material} 소재, " if user.prefer_material else ""
+                    query   += f" :: 주로 찾아야할 것은 {gender}{prefer}{material}이다." if gender or prefer or material else ""
+
         vector  = IntentBase.embedding.embed_query(query)
         matches = IntentBase.index_style.query(vector=vector, top_k=top_k, namespace=IntentBase.index_style_ns, include_metadata=True)["matches"]
 

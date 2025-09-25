@@ -1,4 +1,3 @@
-import html
 import re
 
 from openai import OpenAI
@@ -25,7 +24,6 @@ class SimpleChatLLM:
         if user_id and ai_id:
             chat_log = self.load_chat_history(user_id, ai_id)
             history = chat_log + history
-
 
         resp = self.client.chat.completions.create(
             model=self._model if model is None else model,

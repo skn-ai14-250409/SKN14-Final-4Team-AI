@@ -24,10 +24,11 @@ class OutfitReco(IntentBase):
     def __call__(self, **kwargs):
         query       = kwargs['query']
         with_voice  = kwargs.get('with_voice', False)
+        user_id     = kwargs.get('user_id', None)
         persona     = kwargs.get('ai_id', 1)
 
-        styles  = self.get_styles_from_vdb(query, top_k=20)          # list[dict] :: 벡터DB 에서 스타일 정보 조회
-        result  = self.__ask_style_sheet(styles=styles, **kwargs)    # list[dict]
+        styles  = self.get_styles_from_vdb(query, user_id=user_id) # list[dict] :: 벡터DB 에서 스타일 정보 조회
+        result  = self.__ask_style_sheet(styles=styles, **kwargs)  # list[dict]
         # print("styles = ")
         # pprint(styles)
         # print("styles = ")
@@ -38,14 +39,13 @@ class OutfitReco(IntentBase):
             f'{self.__style_to_html(result["styles"])}'
             # f'<br/><div class="text">원하시는 스타일을 말씀해주시면 그 스타일에 맞는 제품을 보여드릴게요.</div>'
         )
-        voice = self.get_voice(result_html, with_voice, persona)
-        if voice:
-            result_html += f'<audio controls loop="false" src="{voice}"></audio>'
-        # print(f"{result_html=}")
+        if with_voice:
+            voice = self.get_voice(result["desc"], with_voice, persona)
+            result_html += f'<audio controls src="{voice}"></audio>'
 
         return HTMLResponse(result_html, status_code=200)
 
-    def __ask_style_sheet(self, query, styles:list[dict], user_id=None, ai_id=None) -> dict:
+    def __ask_style_sheet(self, query, styles:list[dict], user_id=None, ai_id=None, **kwargs) -> dict:
         _prompt = PromptTemplate.from_template("""
 당신은 재활용소재로 패션제품을 만드는 회사에서 고문으로 일하고 있는 친환경 활동가이자 패션과 스타일링의 전문가입니다.
 <<스타일링 팁>> 만 사용하여 사용자가 원하는 스타일 3개를 추천하고, 각 스타일마다 상의/하의 조합을 3개씩 추천합니다.

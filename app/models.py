@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
 from sqlalchemy.sql.functions import func
 
 from .database import Base
@@ -42,3 +42,19 @@ class Like(Base):
     user_id   = Column(Integer)
     search_id = Column(Integer)
     liked_at  = Column(DateTime(timezone=True), server_default=func.now())
+
+class Member(Base):
+    __tablename__ = "userapp_member"
+
+    user_id   = Column(Integer, primary_key=True, index=True)
+    height    = Column(Integer)
+    birthday  = Column(DateTime(timezone=True), server_default=func.now())
+    authed    = Column(String)
+    sns_type  = Column(String)
+    nickname  = Column(String)
+    gender    = Column(String)
+    prefer_material = Column(String)
+    prefer    = Column(String)
+    photo_url = Column(String)
+    voice_enabled = Column(Boolean)
+    last_ai_id    = Column(Integer)

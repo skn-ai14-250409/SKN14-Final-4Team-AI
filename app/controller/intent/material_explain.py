@@ -18,6 +18,5 @@ class MaterialExplain(IntentBase):
         super().__init__(prompt)
 
     def __call__(self, **kwargs):
-        kwargs["with_voice"] = True
         result = self.ask_llm(**kwargs)
         return HTMLResponse(result, status_code=200)
