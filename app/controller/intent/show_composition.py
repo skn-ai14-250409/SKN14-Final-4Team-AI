@@ -8,7 +8,7 @@ from langchain_core.prompts import PromptTemplate
 from sqlalchemy import text, select
 from starlette.responses import HTMLResponse
 
-from S3.add_image_by_llm import build_prompt, S3Uploader, generate_model_wearing_refs
+from S3.add_image_by_llm import S3Uploader, generate_model_wearing_refs
 from .IntentBase import IntentBase
 from ... import models
 from ...database import SessionLocal
@@ -20,14 +20,15 @@ class ShowComposition(IntentBase):
     def __init__(self):
         super().__init__()
 
-        self._prompt_step1 = PromptTemplate.from_template("""
+        self._prompt_step1   = PromptTemplate.from_template("""
 이전 대화내역들과 사용자의 질의를 비교하여, 사용자가 어떤 제품을 합성하고자 하는지 찾아야합니다. 
 1. 답변은 반드시 <<출력양식>> 을 따라 JSON 으로만 반환해야 합니다.
 2. 사용자의 질의내용이 이전 대화내역중에 있는 스타일이나 제품을 찾고있다고 판단되는 경우 related 타입으로 답변을 반환합니다.
 3. 이전 대화내역이 html 로 이뤄져있다면, innerText 와 더불어 태그와 속성에서 url 과 id 값들을 추출해내야 합니다.
 4. data-label 이 "합성결과" 인 대화내역은 모두 무시합니다.
 5. data-label 이 "제품정보" 인 대화내역을 위주로 검색합니다.
-
+6. 사용자가 스타일을 지칭하지는 않았으나 이전 대화내역에 제품정보가 있다면, 그 제품을 합성하겠다고 판단합니다.
+6.1. 사용자가 스타일을 지칭하지는 않았으나 이전 대화내역에 제품정보가 여러개 있다면, 가장 최근 대화의 제품정보가 더 높은 우선순위를 갖습니다.
 
 <<출력양식>>
 - 사용자가 이전 대화내역에서 검색했던 스타일이나 제품을 찾고있다고 판단되는 경우
@@ -53,6 +54,18 @@ class ShowComposition(IntentBase):
     "query" : "(여기에 사용자 질의에 어울릴 제품을 검색할 수 있도록 안내하는 멘트를 생성하여 넣어주세요.)"
 }}
 """)
+        self._prompt_compose = PromptTemplate.from_template("""
+1. 포토리얼한 20대 모델 이미지를 생성하고 아래 <<참조 의류>>를 자연스럽게 착용·레이어링한 모습으로 표현해줘.
+2. 의상이 여성의류면 여성 모델로, 남성의류면 남성 모델로 생성해줘.
+2.1. 여성과 남성 어느쪽인지 불확실할 때는 여성으로 생성해줘.
+3. 전반적 스타일은 {style_name} 무드에 맞추고, 실제 착장처럼 핏·주름·광택·그림자·겹침을 자연스럽게 만들고, 왜곡은 최소화해.
+4. 배경은 심플한 스튜디오 스타일로.
+5. <<참조 의류>> 이미지에 사람이 포함되어있으면 사람은 반드시 무시하고, 생성한 모델을 사용해야되.
+
+<<참조 의류>>
+상의 URL : {top_image}
+하의 URL : {bottom_image}
+""")
         self.s3_uploader   = S3Uploader(
             bucket=os.getenv("AWS_S3_BUCKET_NAME"),
             region=os.getenv("AWS_S3_REGION", "ap-northeast-2"),
@@ -74,6 +87,9 @@ class ShowComposition(IntentBase):
         # Step2 :: 질의에 해당하는 제품을 찾아 결과 반환.
         if type == "related":
             result     = self.search_product(step1_result["styles"], user_id)
+            ment       = self.influencer(json.dumps(step1_result["styles"], ensure_ascii=False), ai_id)
+            voice      = self.get_voice(ment, True, ai_id)
+            result    += f"<audio controls src={voice}></audio>"
         else:
             # products   = self.get_products_from_vdb(new_query)
             # result     = "".join([self.__prod_to_html(prod) for prod in products])
@@ -83,18 +99,19 @@ class ShowComposition(IntentBase):
         return HTMLResponse(result, status_code=200)
         # return HTMLResponse("시도중", status_code=200)
 
-    def __ask_image_composition(self, name, image_urls):
-        prompt = build_prompt(image_urls, name)
-        _uuid  = uuid.uuid1()
+    def __ask_image_composition(self, name, top_image, bottom_image):
+        prompt   = self._prompt_compose.format(style_name=name, top_image=top_image, bottom_image=bottom_image)
+        _uuid    = uuid.uuid1()
         out_name = f"look_{_uuid}.png"
+        images   = [top_image, bottom_image]
         try:
             s3_key = self.s3_uploader.build_key(out_name, str(_uuid))
-            png_bytes = generate_model_wearing_refs(image_urls, prompt)
+            png_bytes = generate_model_wearing_refs(images, prompt)
             res = self.s3_uploader.put_bytes(png_bytes, s3_key, content_type="image/png")
             return res.get('url')
         except Exception as e:
             print(e)
-            print(f"[ERROR] {name} 스타일 룩 이미지 생성 실패.\n{', '.join(image_urls)}")
+            print(f"[ERROR] {name} 스타일 룩 이미지 생성 실패.\n{images}")
             return ""
     def __save_image(self, user_id:int, name:str, desc:str, top:dict, bottom:dict):
         with SessionLocal() as db:
@@ -111,7 +128,7 @@ class ShowComposition(IntentBase):
                 row    = result.fetchone()
                 if not row:
                     # print("\nNo record for style.")
-                    look_img_url = self.__ask_image_composition(name, [top["image"], bottom["image"]])
+                    look_img_url = self.__ask_image_composition(name, top["image"], bottom["image"])
                     row = models.SearchHistory(user_id=user_id, look_style=name, look_desc=desc, look_img_url=look_img_url)
                     db.add(row)
                     db.flush()
@@ -138,7 +155,7 @@ class ShowComposition(IntentBase):
                     "name" : name,
                     "desc" : desc,
                     "image": row.look_img_url,
-                    "url"  : f"javascript:openStyle({row.id});",
+                    "url"  : f"/detail/{row.id}",
                     "like" : "unliked" if like is None else "liked"
                 }
 

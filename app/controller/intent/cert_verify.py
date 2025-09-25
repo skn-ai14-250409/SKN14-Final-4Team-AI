@@ -16,9 +16,5 @@ class CertVerify(IntentBase):
         super().__init__(prompt)
 
     def __call__(self, **kwargs):
-        with_voice = kwargs.get("with_voice", False)
         result = self.ask_llm(**kwargs)
-        if with_voice:
-            voice  = self.get_voice(result, with_voice=with_voice)
-            result += f"<audio controls loop='false' src={voice}></audio>"
         return HTMLResponse(result, status_code=200)

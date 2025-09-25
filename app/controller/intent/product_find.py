@@ -1,17 +1,14 @@
-import asyncio
 import json
 import os
 import random
 import threading
-import uuid
 
 from langchain_core.prompts import PromptTemplate
 from sqlalchemy import text
 from starlette.responses import HTMLResponse
 
-from S3.add_image_by_llm import build_prompt, S3Uploader, generate_model_wearing_refs
+from S3.add_image_by_llm import S3Uploader
 from .IntentBase import IntentBase
-from ... import models
 from ...database import SessionLocal
 
 
@@ -39,9 +36,9 @@ class ProductFind(IntentBase):
             "name"  : "깔끔하고 심플한 미니멀",
             "desc"  : "패턴 최소화·모노톤 중심, 실루엣 강조, 액세서리 최소",
             "combi" : [
-                {{ "top" : {{ "name" : "화이트 셔츠", "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)"}}  , "bottom" : {{ "name" : "블랙 슬랙스", "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)" }} }},
-                {{ "top" : {{ "name" : "솔리드 티셔츠", "color":(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)"}}, "bottom" : {{ "name" : "그레이 와이드 팬츠", "color":(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)" }} }},
-                {{ "top" : {{ "name" : "슬림핏 니트", "color":(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)"}}  , "bottom" : {{ "name" : "H라인 스커트", "color":(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)" }} }},
+                {{ "top" : {{ "name" : "화이트 셔츠"  , "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)"}}  , "bottom" : {{ "name" : "블랙 슬랙스"     , "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)" }} }},
+                {{ "top" : {{ "name" : "솔리드 티셔츠", "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)"}}, "bottom" : {{ "name" : "그레이 와이드 팬츠", "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)" }} }},
+                {{ "top" : {{ "name" : "슬림핏 니트"  , "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)"}}  , "bottom" : {{ "name" : "H라인 스커트"    , "color":"(색상을 넣어주세요.)", "category" : "(category를 넣어주세요.)" }} }},
             ]
         }}
     ]
@@ -87,32 +84,40 @@ class ProductFind(IntentBase):
 
         # Step2 :: 질의에 해당하는 제품을 찾아 결과 반환.
         if type == "related":
-            result     = self.search_product(step1_result["styles"], user_id)
+            result   = self.search_product(step1_result["styles"], user_id)
+            ment     = self.influencer(json.dumps(step1_result["styles"], ensure_ascii=False), ai_id)
+            voice    = self.get_voice(ment, True, ai_id)
+            result  += f"<audio controls src={voice}></audio>"
         else:
-            products   = self.get_products_from_vdb(new_query)
-            result     = "".join([self.__prod_to_html(prod) for prod in products])
+            products = self.get_products_from_vdb(new_query)
+            result   = "".join([self.__prod_to_html(prod) for prod in products])
+            result   = f"""<div class="product-container">{result}</div>"""
 
         return HTMLResponse(result, status_code=200)
 
 
     def _search_product_vdb(self, store, key, q, f):
         products = self.get_products_from_vdb(q, 3, f)
-        pick = random.choice(products)
-        pick = {
-            "id"          : pick["id"],
-            "name"        : pick["name"],
-            # "category"    : pick[""],
-            "price"       : pick["price"],
-            "image"       : pick["image"],
-            # "color"       : pick[""],
-            # "color_detail": pick[""],
-            # "material"    : pick[""],
-            "url"         : pick["url"],
-            # "saved_water" : pick[""],
-            # "saved_co2"   : pick[""],
-            # "spec"        : pick[""],
-        }
-        store[key] = pick
+        if products:
+            pick = random.choice(products)
+            pick = {
+                "id"          : pick["id"],
+                "name"        : pick["name"],
+                # "category"    : pick[""],
+                "price"       : pick["price"],
+                "image"       : pick["image"],
+                # "color"       : pick[""],
+                # "color_detail": pick[""],
+                # "material"    : pick[""],
+                "url"         : pick["url"],
+                # "saved_water" : pick[""],
+                # "saved_co2"   : pick[""],
+                # "spec"        : pick[""],
+            }
+            store[key] = pick
+        else:
+            print("VDB에서 검색된 제품 없음", f"{q=}", f"{f=}", sep="\n")
+
     def search_product(self, styles, user_id):
         threads  = []
         for style in styles:
