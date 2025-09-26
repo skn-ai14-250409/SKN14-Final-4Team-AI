@@ -90,7 +90,7 @@ class ProductFind(IntentBase):
             result  += f"<audio controls src={voice}></audio>"
         else:
             products = self.get_products_from_vdb(new_query)
-            result   = "".join([self.__prod_to_html(prod) for prod in products])
+            result   = "".join([self.__prod_to_html2(prod) for prod in products])
             result   = f"""<div class="product-container">{result}</div>"""
 
         return HTMLResponse(result, status_code=200)
@@ -150,6 +150,21 @@ class ProductFind(IntentBase):
         try:
             return """
 <div class='product-card' data-id='{id}' data-label="제품정보">
+    <a href='{url}' target='_blank'>
+       <div class='product-image' style='background-image: url({image});'></div>
+        <div class='product-info'>
+            <div class='product-title'>{name}</div>
+            <div class='product-description'>{price}</div>
+        </div>
+    </a>
+</div>""".format(**info)
+        except Exception as e:
+            print(e, f"ProductFind.__prod_to_html() :: info = {info}")
+            return ""
+    def __prod_to_html2(self, info:dict):
+        try:
+            return """
+<div class='product-card' data-id='{id}'>
     <a href='{url}' target='_blank'>
        <div class='product-image' style='background-image: url({image});'></div>
         <div class='product-info'>
