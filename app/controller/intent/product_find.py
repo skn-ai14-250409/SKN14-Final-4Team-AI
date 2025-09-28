@@ -21,6 +21,7 @@ class ProductFind(IntentBase):
 이전 대화내역들과 사용자의 질의를 비교하여, 사용자가 어떤 제품을 찾고자 하는지 판별하세요. 
 1. 답변은 반드시 <<출력양식>> 을 따라 JSON 으로만 반환해야 합니다.
 2. 사용자의 질의내용이 이전 대화내역중에 있는 스타일이나 제품을 찾고있다고 판단되는 경우 related 타입으로 답변을 반환합니다.
+2.1. 이 때 제품은 스타일에 맞는 제품으로 상의 2개, 하의 2개 만 추출합니다.
 3. <<출력양식>> 에서 상의/하의의 color는 {colors} 중 하나로만 표현해야 합니다. 영어로만 넣어주세요.
 3.1. 해당하는 항목이 없다면 가장 무난한 색상으로 넣어주세요.
 4. <<출력양식>> 에서 상의/하의의 category 는 {categories} 중 하나로만 표현해야 합니다. 영어로만 넣어주세요.
@@ -89,7 +90,7 @@ class ProductFind(IntentBase):
             voice    = self.get_voice(ment, True, ai_id)
             result  += f"<audio controls src={voice}></audio>"
         else:
-            products = self.get_products_from_vdb(new_query)
+            products = self.get_products_from_vdb(new_query, top_k=2)
             result   = "".join([self.__prod_to_html2(prod) for prod in products])
             result   = f"""<div class="product-container">{result}</div>"""
 
