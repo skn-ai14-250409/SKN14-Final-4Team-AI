@@ -85,6 +85,7 @@ class OutfitReco(IntentBase):
 """)
         message = _prompt.format(style_tips=json.dumps(styles, ensure_ascii=False))
         result  = self.ask_llm(query, user_id=user_id, ai_id=ai_id, prompt=message)
+        # print(message, result, sep="\n")
         return json.loads(result)
 
     def __style_to_html(self, styles):
