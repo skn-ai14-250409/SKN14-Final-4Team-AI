@@ -4,8 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # 라우터
-from app.controller import routing
-
+from app.api.chat import router as chat_router
 
 origins = [
     "http://localhost:8000",        # 개발 환경 프론트엔드
@@ -24,7 +23,7 @@ app.add_middleware(
 )
 
 # router 등록
-app.include_router(routing.router)
+app.include_router(chat_router)
 
 @app.get("/health", summary="AWS Health Check 용", response_description="항상 {status:'ok'} 를 200 으로 반환.")
 def health():

@@ -10,10 +10,9 @@ from sqlalchemy import text, select
 from starlette.responses import HTMLResponse
 
 from S3.add_image_by_llm import build_prompt, S3Uploader, generate_model_wearing_refs
-from .IntentBase import IntentBase
-from ... import models
-from ...database import SessionLocal
-from ...models import SearchHistory, Like
+from app.intent.IntentBase import IntentBase
+from app.database import SessionLocal
+from app.models import SearchHistory, Like
 
 
 class ShowComposition(IntentBase):

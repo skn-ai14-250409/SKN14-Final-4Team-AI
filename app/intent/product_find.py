@@ -10,9 +10,11 @@ from sqlalchemy import text
 from starlette.responses import HTMLResponse
 
 from S3.add_image_by_llm import build_prompt, S3Uploader, generate_model_wearing_refs
-from .IntentBase import IntentBase
-from ... import models
-from ...database import SessionLocal
+from app.intent.IntentBase import IntentBase
+from app import models
+from app.database import SessionLocal
+from html import escape
+from urllib.parse import urlparse
 
 
 class ProductFind(IntentBase):
@@ -63,6 +65,55 @@ class ProductFind(IntentBase):
             presign_expire=0
         )
 
+    async def run(self, query: str, slots: dict | None = None, profile: dict | None = None, **kwargs):
+        """
+        오케스트레이터 표준 엔트리포인트.
+        - dict payload를 반환하여 run_pipeline(...)에서 result.get(...) 접근 가능
+        - 기존 __call__ 기능(제품 검색/HTML 카드 렌더)은 재사용
+        """
+        user_id = kwargs.get("user_id")
+        ai_id   = kwargs.get("ai_id")
+
+        # Step1: LLM으로 질의 유형 판별 (기존 __call__ 로직과 동일, 방탄 파싱)
+        step1_raw = self.ask_llm(
+            query,
+            prompt=self._prompt_step1.format(colors=self.all_colors, categories=self.all_categories),
+            model="gpt-5-mini-2025-08-07",
+            user_id=user_id,
+            ai_id=ai_id,
+        )
+        try:
+            step1 = json.loads(step1_raw)
+        except Exception:
+            # 모델 포맷 일탈 시 원문 질의로 'original'로 처리
+            step1 = {"type": "original", "query": query}
+
+        type_     = step1.get("type", "original")
+        new_query = step1.get("query", query)
+
+        # Step2: 제품 검색 → HTML 렌더 (기존 __call__과 동일)
+        if type_ == "related" and "styles" in step1:
+            html = self.search_product(step1["styles"], user_id)
+            text = "이전 대화와 연관된 스타일 기반으로 제품을 제안합니다."
+            count_meta = None  # related는 개수 계산이 까다로워 생략
+        else:
+            products = self.get_products_from_vdb(new_query)
+            html = "".join([self.__prod_to_html(p) for p in products])
+            text = f"{len(products)}개 제품을 찾았습니다."
+            count_meta = len(products)
+
+        # 표준 payload 반환 (오케스트레이터가 dict로 받음)
+        return {
+            "text":  text,           # 메인 요약(간단 문장)
+            "html":  html,           # 프론트 표시용 HTML
+            "slots": slots or {},    # 슬롯 보정 필요 시 여기서 수정
+            "meta":  {
+                "mode": type_,       # "related" | "original"
+                "used_query": new_query,
+                **({"count": count_meta} if count_meta is not None else {}),
+            },
+        }
+    
     def get_all_product_data(self, column):
         with SessionLocal() as db:
             _query = f"SELECT DISTINCT({column}) {column} FROM app_product"
@@ -93,9 +144,6 @@ class ProductFind(IntentBase):
 
         return HTMLResponse(result, status_code=200)
 
-
-
-
     def __ask_image_composition(self, name, image_urls):
         prompt = build_prompt(image_urls, name)
         _uuid  = uuid.uuid1()
@@ -109,6 +157,7 @@ class ProductFind(IntentBase):
             print(e)
             print(f"[ERROR] {name} 스타일 룩 이미지 생성 실패.\n{', '.join(image_urls)}")
             return ""
+    
     def __save_image(self, user_id:int, name:str, desc:str, top:dict, bottom:dict):
         # async with AsyncSessionLocal() as db:
         with SessionLocal() as db:
@@ -136,6 +185,7 @@ class ProductFind(IntentBase):
                 print(f"bottom product {bottom['name']} save.")
 
                 db.commit()
+    
     def __ready_image_save(self, user_id, styles):
         dbsave   = []
         for style in styles:
@@ -155,7 +205,7 @@ class ProductFind(IntentBase):
             "name"        : pick["name"],
             # "category"    : pick[""],
             "price"       : pick["price"],
-            "image"       : pick["image"],
+            "image"       : pick["image_url"],
             # "color"       : pick[""],
             # "color_detail": pick[""],
             # "material"    : pick[""],
@@ -165,6 +215,7 @@ class ProductFind(IntentBase):
             # "spec"        : pick[""],
         }
         store[key] = pick
+    
     def search_product(self, styles, user_id):
         threads  = []
         for style in styles:
@@ -197,19 +248,36 @@ class ProductFind(IntentBase):
 
         return "".join(styles_html)
 
-    def __prod_to_html(self, info:dict):
+    @staticmethod
+    def _safe_url(s: str) -> str:
+        """http/https만 허용, 아니면 빈 문자열"""
+        s = (s or "").strip()
+        parsed = urlparse(s)
+        return s if parsed.scheme in ("http", "https") else ""
+
+    def __prod_to_html(self, info: dict):
+        # 1) 값 이스케이프/정제
+        safe = {
+            "id":    escape(str(info.get("id", "")),    quote=True),
+            "url":   escape(self._safe_url(info.get("url", "")),   quote=True),
+            "image": escape(self._safe_url(info.get("image", "")), quote=True),
+            "name":  escape(str(info.get("name", "")),  quote=True),
+            "price": escape(str(info.get("price", "")), quote=True),
+        }
+
+        # 2) 템플릿에 주입
         return """
 <div class="product-card" data-id="{id}" data-url="{url}">
-    <a href="{url}" target="_blank">
-        <div class="product-image" style="background-image: url('{image}');"></div>
-        <div class="product-info">
-            <div class="product-title">{name}</div>
-            <div class="product-description">{price}</div>
-        </div>
-        <div class="button-box">
-            <button class="cert-button">인증정보</button>
-            <button class="comp-button">착샷</button>
-        </div>
-    </a>
+  <a class="product-link" href="{url}" target="_blank" rel="noopener noreferrer" aria-label="{name} 상세보기">
+    <img class="product-image" src="{image}" alt="{name}" loading="lazy" />
+    <div class="product-info">
+      <div class="product-title">{name}</div>
+      <div class="product-description">{price}</div>
+    </div>
+  </a>
+  <div class="button-box">
+    <button type="button" class="cert-button">인증정보</button>
+    <button type="button" class="comp-button">착샷</button>
+  </div>
 </div>
-""".format(**info)
+""".format(**safe)

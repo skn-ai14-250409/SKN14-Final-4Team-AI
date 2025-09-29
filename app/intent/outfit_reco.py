@@ -3,7 +3,7 @@ import json
 from langchain_core.prompts import PromptTemplate
 from starlette.responses import HTMLResponse
 
-from .IntentBase import IntentBase
+from app.intent.IntentBase import IntentBase
 
 
 class OutfitReco(IntentBase):
@@ -21,29 +21,39 @@ class OutfitReco(IntentBase):
 """
         super().__init__(prompt)
 
-    def __call__(self, **kwargs):
-        query       = kwargs['query']
-        with_voice  = kwargs.get('with_voice', False)
+    async def run(self, query: str, slots: dict | None = None, profile: dict | None = None, **kwargs):
+        with_voice  = bool(kwargs.get('with_voice', False))
         persona     = kwargs.get('persona', 1)
 
-        styles  = self.get_styles_from_vdb(query, top_k=20)           # list[dict] :: 벡터DB 에서 스타일 정보 조회
-        result  = self.__ask_style_sheet2(styles=styles, **kwargs)    # list[dict]
-        # print("styles = ")
-        # pprint(styles)
-        # print("styles = ")
-        # pprint(result)
+        # 1) 벡터검색
+        styles  = self.get_styles_from_vdb(query, top_k=20)
 
-        result_html = (
-            f'<div class="text">{result["desc"]}</div>'
-            f'{self.__style_to_html(result["styles"])}'
+        # 2) LLM으로 JSON 생성
+        result  = self.__ask_style_sheet2(query=query, styles=styles,
+                                          user_id=kwargs.get('user_id'),
+                                          ai_id=kwargs.get('ai_id'))  # dict: {desc, styles}
+
+        # 3) HTML 렌더링
+        html = (
+            f'<div class="text">{result.get("desc","")}</div>'
+            f'{self.__style_to_html(result.get("styles", []))}'
             f'<br/><div class="text">원하시는 스타일을 말씀해주시면 그 스타일에 맞는 제품을 보여드릴게요.</div>'
         )
-        voice = self.get_voice(result_html, with_voice, persona)
-        if voice:
-            result_html += f'<audio controls loop="false" src="{voice}"></audio>'
-        # print(f"{result_html=}")
 
-        return HTMLResponse(result_html, status_code=200)
+        if with_voice:
+            voice = self.get_voice(html, with_voice=True, persona=persona)
+            if voice:
+                html += f'<audio controls loop="false" src="{voice}"></audio>'
+
+        # 4) orchestrator가 기대하는 payload로 반환
+        return {
+            "text": result.get("desc",""),
+            "html": html,
+            "slots": slots or {},     # 이 인텐트에서 보정이 있으면 수정
+            "meta": {
+                "styles_topk": len(styles)
+            }
+        }
 
     def __ask_style_sheet2(self, query, styles:list[dict], user_id=None, ai_id=None) -> dict:
         _prompt = PromptTemplate.from_template("""

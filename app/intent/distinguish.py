@@ -1,4 +1,4 @@
-from .IntentBase import IntentBase
+from app.intent.IntentBase import IntentBase
 
 class Distinguish(IntentBase):
 
