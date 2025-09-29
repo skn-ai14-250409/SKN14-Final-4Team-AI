@@ -58,12 +58,15 @@ class ShowComposition(IntentBase):
 1. 포토리얼한 20대 모델 이미지를 생성하고 아래 <<참조 의류>>를 자연스럽게 착용·레이어링한 모습으로 표현해줘.
 2. 의상이 여성의류면 여성 모델로, 남성의류면 남성 모델로 생성해줘.
 2.1. 여성과 남성 어느쪽인지 불확실할 때는 여성으로 생성해줘.
-3. 전반적 스타일은 {style_name} 무드에 맞추고, 실제 착장처럼 핏·주름·광택·그림자·겹침을 자연스럽게 만들고, 왜곡은 최소화해.
+3. 전반적 분위기는 {style_name} 무드에 맞추고, 실제 착장처럼 핏·주름·광택·그림자·겹침을 자연스럽게 만들고, 왜곡은 최소화해.
 4. 배경은 심플한 스튜디오 스타일로.
 5. <<참조 의류>> 이미지에 사람이 포함되어있으면 사람은 반드시 무시하고, 생성한 모델을 사용해야되.
+6. 상의URL 에서는 상의만 추출하고, 하의URL 에서는 하의만 추출해서 합성해줘.
 
 <<참조 의류>>
+상의 제품명 : {top_name}
 상의 URL : {top_image}
+하의 제품명 : {bottom_name}
 하의 URL : {bottom_image}
 """)
         self.s3_uploader   = S3Uploader(
@@ -99,8 +102,8 @@ class ShowComposition(IntentBase):
         return HTMLResponse(result, status_code=200)
         # return HTMLResponse("시도중", status_code=200)
 
-    def __ask_image_composition(self, name, top_image, bottom_image):
-        prompt   = self._prompt_compose.format(style_name=name, top_image=top_image, bottom_image=bottom_image)
+    def __ask_image_composition(self, name, top_image, bottom_image, top_name, bottom_name):
+        prompt   = self._prompt_compose.format(style_name=name, top_image=top_image, bottom_image=bottom_image, top_name=top_name, bottom_name=bottom_name)
         _uuid    = uuid.uuid1()
         out_name = f"look_{_uuid}.png"
         images   = [top_image, bottom_image]
@@ -128,7 +131,7 @@ class ShowComposition(IntentBase):
                 row    = result.fetchone()
                 if not row:
                     # print("\nNo record for style.")
-                    look_img_url = self.__ask_image_composition(name, top["image"], bottom["image"])
+                    look_img_url = self.__ask_image_composition(name, top["image"], bottom["image"], top["name"], bottom["name"])
                     row = models.SearchHistory(user_id=user_id, look_style=name, look_desc=desc, look_img_url=look_img_url)
                     db.add(row)
                     db.flush()
