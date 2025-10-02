@@ -125,7 +125,7 @@ class IntentBase:
                 "image"       : meta.get("image_url"),
                 "color"       : meta.get("color"),
                 "color_detail": meta.get("color_detail"),
-                "url": meta.get("url"),
+                "url"         : meta.get("url"),
                 # "material"    : self.__parse_merged_material(meta),
                 # "saved_water" : self.__parse_water_saved(json.loads(meta.get("water_saved_l"))),
                 # "saved_co2"   : self.__parse_co2_saved(json.loads(meta.get("co2_saved_kg"))),

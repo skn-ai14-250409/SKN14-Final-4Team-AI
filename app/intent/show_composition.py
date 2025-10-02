@@ -2,6 +2,7 @@ import json
 import os
 import random
 import threading
+import time
 import uuid
 
 from langchain_core.prompts import PromptTemplate
@@ -77,7 +78,15 @@ class ShowComposition(IntentBase):
             presign_expire=0
         )
 
+    def get_all_product_data(self, column):
+        with SessionLocal() as db:
+            _query = f"SELECT DISTINCT({column}) {column} FROM app_product"
+            result = db.execute(text(_query))
+            rows   = result.fetchall()
+            return [row[0] for row in rows]
+
     def __call__(self, **kwargs):
+        start = time.time()
         # Step1 :: 이전에 물어본 스타일에 대해서 묻는 질문인지, 아예 새로운 제품에 대한 질문인지 판단.
         query   = kwargs.get("query")
         user_id = kwargs.get("user_id")
@@ -87,6 +96,7 @@ class ShowComposition(IntentBase):
         # print(f"{step1_result=}")
 
         type      = step1_result['type']
+        new_query = step1_result['query']
         # Step2 :: 질의에 해당하는 제품을 찾아 결과 반환.
         if type == "related":
             result     = self.search_product(step1_result["styles"], user_id)
@@ -99,6 +109,8 @@ class ShowComposition(IntentBase):
             # result = "임의의 조합으로는 생성이 제한됩니다. 특정 스타일을 먼저 검색해주세요."
             result = step1_result["query"]
 
+        end = time.time()
+        print(f"Time spend : {end - start}")
         return HTMLResponse(result, status_code=200)
         # return HTMLResponse("시도중", status_code=200)
 
@@ -117,6 +129,11 @@ class ShowComposition(IntentBase):
             print(f"[ERROR] {name} 스타일 룩 이미지 생성 실패.\n{images}")
             return ""
     def __save_image(self, user_id:int, name:str, desc:str, top:dict, bottom:dict):
+        # print(f"\nuser_id   = {user_id}")
+        # print(f"name      = {name}")
+        # print(f"desc      = {desc}")
+        # print(f"top       = {top}")
+        # print(f"bottom    = {bottom}")
         with SessionLocal() as db:
             top_id    = top.get("id")
             bottom_id = bottom.get("id")
@@ -203,13 +220,17 @@ class ShowComposition(IntentBase):
 
     def __prod_to_html(self, info:dict):
         return """
-<div class='product-card' data-id='{id}' data-label="합성결과">
-    <a href='{url}' target='_blank'>
-        <div class='product-image' style='background-image: url({image});'></div>
-        <div class='heart-icon {like}'>🤍</div>
-        <div class='product-info'>
-            <div class='product-title'>{name}</div>
-            <div class='product-description'>{desc}</div>
+<div class="product-card" data-id="{id}" data-url="{url}">
+    <a href="{url}" target="_blank">
+        <div class="product-image" style="background-image: url('{image}');"></div>
+        <div class="heart-icon {like}">🤍</div>
+        <div class="product-info">
+            <div class="product-title">{name}</div>
+            <div class="product-description">{desc}</div>
+        </div>
+        <div class="button-box">
+            <button class="cert-button">인증정보</button>
+            <button class="comp-button">착샷</button>
         </div>
     </a>
 </div>""".format(**info)
