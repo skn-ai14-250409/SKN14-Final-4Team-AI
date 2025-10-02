@@ -21,7 +21,7 @@ _ = load_dotenv(find_dotenv(usecwd=True))
 # -------------------------
 PINECONE_API_KEY        = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX_PRODUCT  = os.getenv("PINECONE_INDEX_PRODUCT")
-PINECONE_INDEX_HOST = os.getenv("PINECONE_INDEX_HOST")
+PINECONE_INDEX_HOST     = os.getenv("PINECONE_INDEX_HOST")
 OPENAI_API_KEY          = os.getenv("OPENAI_API_KEY")
 CHAT_MODEL              = os.getenv("CHAT_MODEL", "gpt-4o-mini")
 LLM_ENABLE              = os.getenv("LLM_ENABLE", "true").lower() == "true"

@@ -1,7 +1,13 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
 from sqlalchemy.sql.functions import func
 
-from .database import Base
+from app.database import Base
+
+class Brand(Base):
+    __tablename__ = "brand"
+    id = Column(Integer, primary_key=True)
+    brand_name = Column(String(100))
+    esg_report_url = Column(String(255))
 
 
 class SearchHistory(Base):
@@ -14,13 +20,13 @@ class SearchHistory(Base):
     look_desc    = Column(Text, nullable=True)
     searched_at  = Column(DateTime(timezone=True), server_default=func.now())
 
+
 class SearchHistoryProduct(Base):
     __tablename__ = "search_history_product"
 
     id           = Column(Integer, primary_key=True, index=True, autoincrement=True)
     product_id   = Column(Integer)
     search_id    = Column(Integer)
-
 
 
 class ChatHistory(Base):
@@ -34,6 +40,7 @@ class ChatHistory(Base):
     optional_text = Column(Text, nullable=True)
     voice_url     = Column(String, nullable=True)
     talked_at     = Column(DateTime(timezone=True), server_default=func.now())
+
 
 class Like(Base):
     __tablename__ = "mainapp_like"

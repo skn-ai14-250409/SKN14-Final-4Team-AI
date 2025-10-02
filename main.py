@@ -7,8 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse
 
 # 라우터
-from app.controller import routing
-
+from app.api.chat import router as chat_router
 
 origins = [
     "http://localhost:8000",        # 개발 환경 프론트엔드
@@ -27,7 +26,7 @@ app.add_middleware(
 )
 
 # router 등록
-app.include_router(routing.router)
+app.include_router(chat_router)
 
 ROBOTS_TXT_PATH = Path("robots.txt")
 
